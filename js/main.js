@@ -12,6 +12,53 @@ import {
   saveSetLineup, getMatchLineups, deleteSetLineup
 } from './database.js?v=1.1.0';
 
+// PWA Installation
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  console.log('PWA install prompt available');
+  deferredPrompt = e;
+  e.preventDefault();
+  showInstallButton();
+});
+
+function showInstallButton() {
+  // Skapa install-knapp om den inte finns
+  if (!document.getElementById('installButton')) {
+    const button = document.createElement('button');
+    button.id = 'installButton';
+    button.innerText = '📱 Installera App';
+    button.style.cssText = `
+      position: fixed; 
+      top: 10px; 
+      right: 10px; 
+      z-index: 1000; 
+      background: #28a745; 
+      color: white; 
+      border: none; 
+      padding: 10px 15px; 
+      border-radius: 5px; 
+      cursor: pointer;
+      font-size: 14px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    `;
+    
+    button.onclick = installApp;
+    document.body.appendChild(button);
+  }
+}
+
+async function installApp() {
+  if (deferredPrompt) {
+    deferredPrompt.prompt();
+    const result = await deferredPrompt.userChoice;
+    console.log('Install result:', result);
+    if (result.outcome === 'accepted') {
+      document.getElementById('installButton')?.remove();
+    }
+    deferredPrompt = null;
+  }
+}
+
 // Globalt sparat state
 let currentTeamId = null;
 let currentPlayerId = null;
