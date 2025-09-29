@@ -14,11 +14,28 @@ import {
 
 // PWA Installation
 let deferredPrompt;
+let userEngagementTimer;
+
+// Track user engagement (PWA criteria)
+function trackUserEngagement() {
+  localStorage.setItem('userEngagement', Date.now());
+  localStorage.setItem('visitCount', (parseInt(localStorage.getItem('visitCount') || '0') + 1).toString());
+}
+
+// Start engagement tracking
+trackUserEngagement();
+userEngagementTimer = setInterval(trackUserEngagement, 30000); // Track every 30 seconds
+
 window.addEventListener('beforeinstallprompt', (e) => {
   console.log('PWA install prompt available');
   deferredPrompt = e;
   e.preventDefault();
-  showInstallButton();
+  
+  // Only show install button if user has been engaged
+  const visitCount = parseInt(localStorage.getItem('visitCount') || '0');
+  if (visitCount >= 2) { // Show after 2+ visits
+    showInstallButton();
+  }
 });
 
 function showInstallButton() {

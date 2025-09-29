@@ -5,61 +5,77 @@
   "description": "Hantera ditt volleybolllag - spelare, träningar och matcher",
   "start_url": "/volleyCoach/index.html",
   "scope": "/volleyCoach/",
-  "display": "standalone",
+  "display": "fullscreen",
   "orientation": "portrait-primary",
   "prefer_related_applications": false,
+  "related_applications": [],
   "background_color": "#667eea",
   "theme_color": "#667eea",
   "categories": ["sports", "productivity", "utilities"],
+  "launch_handler": {
+    "client_mode": "navigate-new"
+  },
   "lang": "sv",
   "icons": [
     {
       "src": "/volleyCoach/icon.png",
       "sizes": "72x72",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/volleyCoach/icon.png",
       "sizes": "96x96",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/volleyCoach/icon.png",
       "sizes": "128x128",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/volleyCoach/icon.png",
       "sizes": "144x144",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/volleyCoach/icon.png",
       "sizes": "152x152",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/volleyCoach/icon.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/volleyCoach/icon.png",
       "sizes": "384x384",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/volleyCoach/icon.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/volleyCoach/icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/volleyCoach/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
