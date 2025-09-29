@@ -14,28 +14,37 @@ import {
 
 // PWA Installation
 let deferredPrompt;
-let userEngagementTimer;
 
-// Track user engagement (PWA criteria)
-function trackUserEngagement() {
-  localStorage.setItem('userEngagement', Date.now());
-  localStorage.setItem('visitCount', (parseInt(localStorage.getItem('visitCount') || '0') + 1).toString());
+// Debug PWA capabilities
+function debugPWA() {
+  console.log('=== PWA Debug Info ===');
+  console.log('Service Worker supported:', 'serviceWorker' in navigator);
+  console.log('Current URL:', window.location.href);
+  console.log('Is HTTPS:', window.location.protocol === 'https:');
+  console.log('User agent:', navigator.userAgent);
+  
+  // Check manifest
+  fetch('/volleyCoach/manifest.json')
+    .then(response => response.json())
+    .then(manifest => {
+      console.log('Manifest loaded:', manifest);
+    })
+    .catch(err => console.error('Manifest error:', err));
 }
 
-// Start engagement tracking
-trackUserEngagement();
-userEngagementTimer = setInterval(trackUserEngagement, 30000); // Track every 30 seconds
+// Run debug on load
+debugPWA();
 
 window.addEventListener('beforeinstallprompt', (e) => {
-  console.log('PWA install prompt available');
+  console.log('✅ PWA install prompt triggered!');
   deferredPrompt = e;
   e.preventDefault();
-  
-  // Only show install button if user has been engaged
-  const visitCount = parseInt(localStorage.getItem('visitCount') || '0');
-  if (visitCount >= 2) { // Show after 2+ visits
-    showInstallButton();
-  }
+  showInstallButton();
+});
+
+window.addEventListener('appinstalled', (e) => {
+  console.log('✅ PWA was installed successfully');
+  document.getElementById('installButton')?.remove();
 });
 
 function showInstallButton() {
@@ -61,6 +70,50 @@ function showInstallButton() {
     
     button.onclick = installApp;
     document.body.appendChild(button);
+  }
+  
+  // Om ingen prompt finns, visa manuell instruktion
+  setTimeout(() => {
+    if (!deferredPrompt) {
+      showManualInstallInstructions();
+    }
+  }, 2000);
+}
+
+function showManualInstallInstructions() {
+  const instructions = document.createElement('div');
+  instructions.id = 'installInstructions';
+  instructions.innerHTML = `
+    <div style="
+      position: fixed; 
+      top: 60px; 
+      right: 10px; 
+      background: #007bff; 
+      color: white; 
+      padding: 15px; 
+      border-radius: 8px; 
+      max-width: 250px; 
+      font-size: 12px;
+      z-index: 1001;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    ">
+      <strong>Installera som app:</strong><br>
+      📱 <strong>Android Chrome:</strong> Meny → "Installera app"<br>
+      🍎 <strong>iPhone Safari:</strong> Dela → "Lägg till hemskärm"<br>
+      <button onclick="this.parentElement.parentElement.remove()" style="
+        background: transparent; 
+        border: 1px solid white; 
+        color: white; 
+        padding: 5px 10px; 
+        border-radius: 3px; 
+        margin-top: 10px;
+        cursor: pointer;
+      ">Stäng</button>
+    </div>
+  `;
+  
+  if (!document.getElementById('installInstructions')) {
+    document.body.appendChild(instructions);
   }
 }
 
