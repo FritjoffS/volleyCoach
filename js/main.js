@@ -15,35 +15,15 @@ import {
 // PWA Installation
 let deferredPrompt;
 
-// Debug PWA capabilities
-function debugPWA() {
-  console.log('=== PWA Debug Info ===');
-  console.log('Service Worker supported:', 'serviceWorker' in navigator);
-  console.log('Current URL:', window.location.href);
-  console.log('Is HTTPS:', window.location.protocol === 'https:');
-  console.log('User agent:', navigator.userAgent);
-  
-  // Check manifest
-  fetch('/volleyCoach/manifest.json')
-    .then(response => response.json())
-    .then(manifest => {
-      console.log('Manifest loaded:', manifest);
-    })
-    .catch(err => console.error('Manifest error:', err));
-}
-
-// Run debug on load
-debugPWA();
-
 window.addEventListener('beforeinstallprompt', (e) => {
-  console.log('✅ PWA install prompt triggered!');
+  console.log('PWA install prompt available');
   deferredPrompt = e;
   e.preventDefault();
   showInstallButton();
 });
 
 window.addEventListener('appinstalled', (e) => {
-  console.log('✅ PWA was installed successfully');
+  console.log('PWA was installed successfully');
   document.getElementById('installButton')?.remove();
 });
 
@@ -52,68 +32,36 @@ function showInstallButton() {
   if (!document.getElementById('installButton')) {
     const button = document.createElement('button');
     button.id = 'installButton';
-    button.innerText = '📱 Installera App';
+    button.innerHTML = '⬇️';
+    button.title = 'Installera app';
     button.style.cssText = `
       position: fixed; 
-      top: 10px; 
-      right: 10px; 
+      bottom: 20px; 
+      right: 20px; 
       z-index: 1000; 
       background: #28a745; 
       color: white; 
       border: none; 
-      padding: 10px 15px; 
-      border-radius: 5px; 
+      padding: 12px; 
+      border-radius: 50%; 
       cursor: pointer;
-      font-size: 14px;
-      box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+      font-size: 18px;
+      width: 50px;
+      height: 50px;
+      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+      transition: transform 0.2s ease;
     `;
+    
+    // Hover-effekt
+    button.onmouseenter = () => {
+      button.style.transform = 'scale(1.1)';
+    };
+    button.onmouseleave = () => {
+      button.style.transform = 'scale(1)';
+    };
     
     button.onclick = installApp;
     document.body.appendChild(button);
-  }
-  
-  // Om ingen prompt finns, visa manuell instruktion
-  setTimeout(() => {
-    if (!deferredPrompt) {
-      showManualInstallInstructions();
-    }
-  }, 2000);
-}
-
-function showManualInstallInstructions() {
-  const instructions = document.createElement('div');
-  instructions.id = 'installInstructions';
-  instructions.innerHTML = `
-    <div style="
-      position: fixed; 
-      top: 60px; 
-      right: 10px; 
-      background: #007bff; 
-      color: white; 
-      padding: 15px; 
-      border-radius: 8px; 
-      max-width: 250px; 
-      font-size: 12px;
-      z-index: 1001;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    ">
-      <strong>Installera som app:</strong><br>
-      📱 <strong>Android Chrome:</strong> Meny → "Installera app"<br>
-      🍎 <strong>iPhone Safari:</strong> Dela → "Lägg till hemskärm"<br>
-      <button onclick="this.parentElement.parentElement.remove()" style="
-        background: transparent; 
-        border: 1px solid white; 
-        color: white; 
-        padding: 5px 10px; 
-        border-radius: 3px; 
-        margin-top: 10px;
-        cursor: pointer;
-      ">Stäng</button>
-    </div>
-  `;
-  
-  if (!document.getElementById('installInstructions')) {
-    document.body.appendChild(instructions);
   }
 }
 
