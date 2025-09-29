@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="manifest.json">
+  <title>VB Damlag</title>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module" src="js/main.js?v=1.1.0"></script>
+  
+  <!-- Registrera Service Worker för PWA -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js')
+          .then(registration => {
+            console.log('Service Worker registrerad:', registration);
+          })
+          .catch(error => {
+            console.log('Service Worker registrering misslyckades:', error);
+          });
+      });
+    }
+  </script>
+</body>
+</html>
