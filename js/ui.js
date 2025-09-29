@@ -1,5 +1,30 @@
 // ui.js
 
+// Översätt engelska positioner till svenska för visning
+function translatePositionToSwedish(englishPosition) {
+  const translations = {
+    'Setter': 'Passare',
+    'Opposite': 'Högerspiker',
+    'Wing-spiker': 'Vänsterspiker',
+    'Wing-Spiker': 'Vänsterspiker',
+    'Middle-Blocker': 'Center',
+    'Libero': 'Libero'
+  };
+  return translations[englishPosition] || englishPosition;
+}
+
+// Översätt svenska positioner till engelska för lagring
+function translatePositionToEnglish(swedishPosition) {
+  const translations = {
+    'Passare': 'Setter',
+    'Högerspiker': 'Opposite',
+    'Vänsterspiker': 'Wing-spiker',
+    'Center': 'Middle-Blocker',
+    'Libero': 'Libero'
+  };
+  return translations[swedishPosition] || swedishPosition;
+}
+
 // Renderar startsida med lista över lag och knapp för nytt lag
 export function renderStart(appDiv, teams, onTeamSelect, onNewTeam) {
   appDiv.innerHTML = `
@@ -120,7 +145,7 @@ export function renderPlayer(appDiv, player, onEditPlayer, onBack) {
       <div class="player-info">
         <div class="info-section">
           <h4>Grunduppgifter</h4>
-          <p><strong>Position:</strong> ${player.position || '-'}</p>
+          <p><strong>Position:</strong> ${player.position ? translatePositionToSwedish(player.position) : '-'}</p>
           <p><strong>Nummer:</strong> ${player.number || '-'}</p>
           <p><strong>Kontakt:</strong> ${player.contactInfo || '-'}</p>
         </div>
@@ -162,7 +187,7 @@ export function renderPlayers(appDiv, players, onNewPlayer, onSelectPlayer, onBa
       ${players ? Object.entries(players)
         .sort(([,a], [,b]) => (a.name || '').localeCompare(b.name || '', 'sv'))
         .map(([id, p]) =>
-          `<li><button onclick="window.selectPlayer('${id}')">${p.name} ${p.number ? `(#${p.number})` : ''} ${p.position ? `- ${p.position}` : ''}</button></li>`
+          `<li><button onclick="window.selectPlayer('${id}')">${p.name} ${p.number ? `(#${p.number})` : ''} ${p.position ? `- ${translatePositionToSwedish(p.position)}` : ''}</button></li>`
         ).join('') : '<li>Inga spelare</li>'}
     </ul>
   `;
@@ -180,10 +205,10 @@ export function renderPlayerForm(appDiv, player, onSave, onCancel, onDelete = nu
     <label>Position: 
       <select id="playerPosition">
         <option value="">Välj position...</option>
-        <option value="Passare" ${player?.position === 'Passare' ? 'selected' : ''}>Passare</option>
-        <option value="Högerspiker" ${player?.position === 'Högerspiker' ? 'selected' : ''}>Högerspiker</option>
-        <option value="Vänsterspiker" ${player?.position === 'Vänsterspiker' ? 'selected' : ''}>Vänsterspiker</option>
-        <option value="Center" ${player?.position === 'Center' ? 'selected' : ''}>Center</option>
+        <option value="Passare" ${(player?.position === 'Passare' || player?.position === 'Setter') ? 'selected' : ''}>Passare</option>
+        <option value="Högerspiker" ${(player?.position === 'Högerspiker' || player?.position === 'Opposite') ? 'selected' : ''}>Högerspiker</option>
+        <option value="Vänsterspiker" ${(player?.position === 'Vänsterspiker' || player?.position === 'Wing-spiker' || player?.position === 'Wing-Spiker') ? 'selected' : ''}>Vänsterspiker</option>
+        <option value="Center" ${(player?.position === 'Center' || player?.position === 'Middle-Blocker') ? 'selected' : ''}>Center</option>
         <option value="Libero" ${player?.position === 'Libero' ? 'selected' : ''}>Libero</option>
       </select>
     </label>
@@ -196,7 +221,7 @@ export function renderPlayerForm(appDiv, player, onSave, onCancel, onDelete = nu
   document.getElementById('savePlayer').onclick = () => {
     const newPlayer = {
       name: document.getElementById('playerName').value.trim(),
-      position: document.getElementById('playerPosition').value.trim(),
+      position: translatePositionToEnglish(document.getElementById('playerPosition').value.trim()),
       number: document.getElementById('playerNumber').value,
       contactInfo: document.getElementById('playerContact').value.trim(),
     };
@@ -408,7 +433,7 @@ export function renderMatchDetail(appDiv, match, onEdit, onBack, onManageSquad =
               <div class="squad-player">
                 <span class="player-number">${playerInfo.number || '?'}</span>
                 <span class="player-name">${playerInfo.name}</span>
-                <span class="player-position">${playerInfo.position || ''}</span>
+                <span class="player-position">${playerInfo.position ? translatePositionToSwedish(playerInfo.position) : ''}</span>
               </div>
             `).join('')}
           </div>
@@ -493,7 +518,7 @@ export function renderSquadManager(appDiv, match, allPlayers, onSave, onBack) {
                   <div class="player-info">
                     <span class="player-number">${player.number || '?'}</span>
                     <span class="player-name">${player.name}</span>
-                    <span class="player-position">${player.position || ''}</span>
+                    <span class="player-position">${player.position ? translatePositionToSwedish(player.position) : ''}</span>
                   </div>
                   <button class="toggle-player" data-player-id="${playerId}">
                     ${isInSquad ? '✗ Ta bort' : '✓ Lägg till'}
@@ -511,7 +536,7 @@ export function renderSquadManager(appDiv, match, allPlayers, onSave, onBack) {
               <div class="squad-player" data-player-id="${playerId}">
                 <span class="player-number">${playerInfo.number || '?'}</span>
                 <span class="player-name">${playerInfo.name}</span>
-                <span class="player-position">${playerInfo.position || ''}</span>
+                <span class="player-position">${playerInfo.position ? translatePositionToSwedish(playerInfo.position) : ''}</span>
                 <button class="remove-btn" data-player-id="${playerId}">✗</button>
               </div>
             `).join('')}
@@ -577,7 +602,7 @@ export function renderSquadManager(appDiv, match, allPlayers, onSave, onBack) {
       `<div class="squad-player" data-player-id="${playerId}">
         <span class="player-number">${playerInfo.number || '?'}</span>
         <span class="player-name">${playerInfo.name}</span>
-        <span class="player-position">${playerInfo.position || ''}</span>
+        <span class="player-position">${playerInfo.position ? translatePositionToSwedish(playerInfo.position) : ''}</span>
         <button class="remove-btn" data-player-id="${playerId}">✗</button>
       </div>`
     ).join('');
@@ -813,7 +838,7 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
       availablePlayers.forEach(([id, p]) => {
         // Visa spelare endast om den inte är vald någon annanstans, eller om det är den nuvarande valda
         if (!selectedPlayers.has(id) || id === currentValue) {
-          optionsHTML += `<option value="${id}">${p.name} (#${p.number || '?'}) - ${p.position || 'Okänd position'}</option>`;
+          optionsHTML += `<option value="${id}">${p.name} (#${p.number || '?'}) - ${p.position ? translatePositionToSwedish(p.position) : 'Okänd position'}</option>`;
         }
       });
       
@@ -831,7 +856,7 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
       // Lägg till alla tillgängliga spelare
       availablePlayers.forEach(([id, p]) => {
         if (!selectedPlayers.has(id) || id === currentLiberoValue) {
-          liberoOptionsHTML += `<option value="${id}">${p.name} (#${p.number || '?'}) - ${p.position || 'Okänd position'}</option>`;
+          liberoOptionsHTML += `<option value="${id}">${p.name} (#${p.number || '?'}) - ${p.position ? translatePositionToSwedish(p.position) : 'Okänd position'}</option>`;
         }
       });
       
