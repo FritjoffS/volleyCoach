@@ -4,7 +4,7 @@
   "description": "Hantera ditt volleybolllag",
   "start_url": "/volleyCoach/",
   "scope": "/volleyCoach/",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#667eea",
   "theme_color": "#667eea",
   "icons": [
