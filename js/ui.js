@@ -1,7 +1,7 @@
 // ui.js
 
 // Översätt engelska positioner till svenska för visning
-function translatePositionToSwedish(englishPosition) {
+/*function translatePositionToSwedish(englishPosition) {
   const translations = {
     'Setter': 'Passare',
     'Opposite': 'Högerspiker',
@@ -23,11 +23,12 @@ function translatePositionToEnglish(swedishPosition) {
     'Libero': 'Libero'
   };
   return translations[swedishPosition] || swedishPosition;
-}
+}*/
 
 // Renderar startsida med lista över lag och knapp för nytt lag
 export function renderStart(appDiv, teams, onTeamSelect, onNewTeam) {
   appDiv.innerHTML = `
+    <img src="logo.png" alt="Logo">
     <h2>Start</h2>
     <ul>
       ${Object.keys(teams || {}).map(id => 
