@@ -1,15 +1,15 @@
 // Service Worker för PWA-funktionalitet
-const CACHE_NAME = 'volleycoach-v1.0.0';
+const CACHE_NAME = 'volleycoach-v1.1.0';
 const urlsToCache = [
-  '/',
-  '/index.html',
-  '/css/style.css',
-  '/js/main.js',
-  '/js/ui.js',
-  '/js/database.js',
-  '/js/firebase-config.js',
-  '/manifest.json',
-  '/scheme.png'
+  '/volleyCoach/',
+  '/volleyCoach/index.html',
+  '/volleyCoach/css/style.css',
+  '/volleyCoach/js/main.js',
+  '/volleyCoach/js/ui.js',
+  '/volleyCoach/js/database.js',
+  '/volleyCoach/js/firebase-config.js',
+  '/volleyCoach/manifest.json',
+  '/volleyCoach/icon.png'
 ];
 
 // Installera Service Worker
