@@ -28,7 +28,6 @@ function translatePositionToEnglish(swedishPosition) {
 // Renderar startsida med lista över lag och knapp för nytt lag
 export function renderStart(appDiv, teams, onTeamSelect, onNewTeam) {
   appDiv.innerHTML = `
-    <img src="logo.png" alt="Logo">
     <h2>Start</h2>
     <ul>
       ${Object.keys(teams || {}).map(id => 
