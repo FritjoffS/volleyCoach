@@ -96,6 +96,9 @@ function showStart() {
     });
 }
 
+// Expose stable global navigations so UI buttons can call them directly
+window.gotoStart = showStart;
+
 // Visa formulär att skapa nytt lag
 function showNewTeam() {
   renderNewTeam(document.getElementById('app'), async (teamData) => {
