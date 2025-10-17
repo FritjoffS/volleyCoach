@@ -96,40 +96,56 @@ export function renderTeam(appDiv, team, onShowActivities, onShowPlayers, onEdit
   window.showPlayers = () => {
     onShowPlayers('players');
   };
+
+  // Säkerställ att header och nav är synliga när team-vyn renderas
+  const headerButtons = document.querySelector('.team-header-buttons');
+  if (headerButtons) headerButtons.classList.remove('hidden');
+  const teamNav = document.querySelector('nav');
+  if (teamNav) teamNav.classList.remove('hidden');
 }
 
 // Renderar aktiviteter (träningar och matcher) för laget
 export function renderActivities(appDiv, activities, onNewTraining, onNewMatch, onSelectTraining, onSelectMatch, onBack = null) {
   appDiv.innerHTML = `
-    <div class="breadcrumb">
-      <span>Lag</span> → <span class="current">Aktiviteter</span>
-    </div>
-    <h3>Aktiviteter</h3>
+    <h2>Aktiviteter</h2>
     <div class="action-buttons">
       ${onBack ? '<button onclick="window.backToTeam()" style="background-color: #6c757d;">← Tillbaka till lag</button>' : ''}
       <button onclick="window.newTraining()">Ny Träning</button>
       <button onclick="window.newMatch()">Ny Match</button>
     </div>
 
-    <h4>Träningar</h4>
-    <ul>
-      ${activities.trainings ? Object.entries(activities.trainings).map(([id, t]) =>
-        `<li><button onclick="window.selectTraining('${id}')">${t.date || 'Ny träning'} - ${t.time || ''}</button></li>`
-      ).join('') : `<li>Inga träningar</li>`}
-    </ul>
+    <div class="activities-content">
+      <section class="activities-section">
+        <h4>Träningar</h4>
+        <ul>
+          ${activities.trainings ? Object.entries(activities.trainings).map(([id, t]) =>
+            `<li><button onclick="window.selectTraining('${id}')">${t.date || 'Ny träning'} - ${t.time || ''}</button></li>`
+          ).join('') : `<li>Inga träningar</li>`}
+        </ul>
+      </section>
 
-    <h4>Matcher</h4>
-    <ul>
-      ${activities.matches ? Object.entries(activities.matches).map(([id, m]) =>
-        `<li><button onclick="window.selectMatch('${id}')">${m.date || 'Ny match'} vs ${m.opponent || 'TBD'}</button></li>`
-      ).join('') : `<li>Inga matcher</li>`}
-    </ul>
+      <section class="activities-section">
+        <h4>Matcher</h4>
+        <ul>
+          ${activities.matches ? Object.entries(activities.matches).map(([id, m]) =>
+            `<li><button onclick="window.selectMatch('${id}')">${m.date || 'Ny match'} vs ${m.opponent || 'TBD'}</button></li>`
+          ).join('') : `<li>Inga matcher</li>`}
+        </ul>
+      </section>
+    </div>
   `;
   window.newTraining = onNewTraining;
   window.newMatch = onNewMatch;
   window.selectTraining = onSelectTraining;
   window.selectMatch = onSelectMatch;
   if(onBack) window.backToTeam = onBack;
+
+  // Dölj globala team-header-knappar och nav i aktivitetsdialogen så att
+  // "← Till Startsida", "Redigera Lag", "Aktiviteter" och "Spelare" inte syns här.
+  const headerButtons = document.querySelector('.team-header-buttons');
+  if (headerButtons) headerButtons.classList.add('hidden');
+  const teamNav = document.querySelector('nav');
+  if (teamNav) teamNav.classList.add('hidden');
 }
 
 // Renderar detaljerad vy för en spelare
@@ -175,25 +191,34 @@ export function renderPlayer(appDiv, player, onEditPlayer, onBack) {
 // Rendera lista med spelare
 export function renderPlayers(appDiv, players, onNewPlayer, onSelectPlayer, onBack = null) {
   appDiv.innerHTML = `
-    <div class="breadcrumb">
-      <span>Lag</span> → <span class="current">Spelare</span>
-    </div>
-    <h3>Spelare</h3>
+    <h2>Spelare</h2>
     <div class="action-buttons">
       ${onBack ? '<button onclick="window.backToTeam()" style="background-color: #6c757d;">← Tillbaka till lag</button>' : ''}
       <button onclick="window.newPlayer()">Ny Spelare</button>
     </div>
-    <ul>
-      ${players ? Object.entries(players)
-        .sort(([,a], [,b]) => (a.name || '').localeCompare(b.name || '', 'sv'))
-        .map(([id, p]) =>
-          `<li><button onclick="window.selectPlayer('${id}')">${p.name} ${p.number ? `(#${p.number})` : ''} ${p.position ? `- ${p.position}` : ''}</button></li>`
-        ).join('') : '<li>Inga spelare</li>'}
-    </ul>
+
+    <div class="activities-content">
+      <section class="activities-section">
+        <h4>Spelare</h4>
+        <ul>
+          ${players ? Object.entries(players)
+            .sort(([,a], [,b]) => (a.name || '').localeCompare(b.name || '', 'sv'))
+            .map(([id, p]) =>
+              `<li><button onclick="window.selectPlayer('${id}')">${p.name} ${p.number ? `(#${p.number})` : ''} ${p.position ? `- ${p.position}` : ''}</button></li>`
+            ).join('') : '<li>Inga spelare</li>'}
+        </ul>
+      </section>
+    </div>
   `;
   window.newPlayer = onNewPlayer;
   window.selectPlayer = onSelectPlayer;
   if(onBack) window.backToTeam = onBack;
+
+  // Dölj globala team-header-knappar och nav i spelar-dialogen
+  const headerButtons = document.querySelector('.team-header-buttons');
+  if (headerButtons) headerButtons.classList.add('hidden');
+  const teamNav = document.querySelector('nav');
+  if (teamNav) teamNav.classList.add('hidden');
 }
 
 // Rendera formulär för ny eller redigera spelare
