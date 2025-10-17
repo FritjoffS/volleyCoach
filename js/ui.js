@@ -739,7 +739,9 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
         </div>
         
         <div class="lineup-actions">
-          <button id="saveLineup">Spara Set <span id="saveSetNumber">1</span></button>
+            <button id="saveLineup">Spara Set <span id="saveSetNumber">1</span></button>
+            <button id="rotateCW" title="Rotera medurs">Rotera medurs ▶</button>
+            <button id="rotateCCW" title="Rotera moturs">◀ Rotera moturs</button>
           <button id="copyFromPrevious">Kopiera från föregående set</button>
           <button id="clearLineup">Rensa uppställning</button>
           <button id="backToMatch">Tillbaka till match</button>
@@ -921,8 +923,51 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
         liberoSelect.value = currentLiberoValue; // Behåll det valda värdet
     });
   }
+
+  // Rotera uppställningen ett steg medurs eller moturs (menar rotationsordning 1..6)
+  function rotateLineup(direction) {
+    const positions = ['1','2','3','4','5','6'];
+    // Läs nuvarande värden
+    const values = positions.map(p => {
+      const s = document.querySelector(`select[data-position="${p}"]`);
+      return s ? s.value : '';
+    });
+
+    let newValues;
+    if (direction === 'cw') {
+      // Rotera medurs: varje spelare flyttas till nästa position (1->2, 2->3, ..., 6->1)
+      // För att flytta varje värde till nästa position läser vi värdet från föregående index
+      newValues = positions.map((_, i) => values[(i + 1) % 6]); // shift left in array -> moves players forward one position
+    } else {
+      // Rotera moturs: varje spelare flyttas till föregående position (1->6, 2->1, ...)
+      newValues = positions.map((_, i) => values[(i + 5) % 6]); // shift right in array -> moves players back one position
+    }
+
+    // Applicera nya värden, skapa fallback-option vid behov
+    positions.forEach((pos, idx) => {
+      const select = document.querySelector(`select[data-position="${pos}"]`);
+      if (!select) return;
+      const playerId = newValues[idx] || '';
+      if (playerId && ![...select.options].some(o => o.value === playerId)) {
+        const player = (squadPlayers && squadPlayers[playerId]) || null;
+        const opt = document.createElement('option');
+        opt.value = playerId;
+        opt.text = player ? ` (${player.number || '?'}) ${player.name} - ${player.position || 'Okänd position'}` : playerId;
+        select.add(opt);
+      }
+      select.value = playerId;
+    });
+
+    // Uppdatera libero-valen om rotation även påverkar dem (vi lämnar libero oförändrad)
+    updateLineupStatus();
+    updateAvailablePlayers();
+  }
   
   // Event listeners för tabs
+  const rotateCwBtn = document.getElementById('rotateCW');
+  if (rotateCwBtn) rotateCwBtn.onclick = () => rotateLineup('cw');
+  const rotateCcwBtn = document.getElementById('rotateCCW');
+  if (rotateCcwBtn) rotateCcwBtn.onclick = () => rotateLineup('ccw');
   document.querySelectorAll('.tab-button').forEach(button => {
     button.onclick = () => {
       // Uppdatera active tab
