@@ -87,7 +87,9 @@ export async function updateMatch(teamId, matchId, matchData) {
 
 // Uppdatera matchens spelartrupp
 export async function updateMatchSquad(teamId, matchId, squadData) {
-  await update(ref(db, `teams/${teamId}/activities/matches/${matchId}/squad`), squadData);
+  // Use set to overwrite the squad node entirely so removed players are deleted
+  // (update would merge and leave removed keys intact).
+  await set(ref(db, `teams/${teamId}/activities/matches/${matchId}/squad`), squadData);
 }
 
 // Hämta en specifik match
