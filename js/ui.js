@@ -74,10 +74,10 @@ export function renderNewTeam(appDiv, onSave, onCancel) {
 // Renderar lagets sida med meny för aktiviteter och spelare
 export function renderTeam(appDiv, team, onShowActivities, onShowPlayers, onEditTeam, onBack) {
   appDiv.innerHTML = `
-    <div class="team-header">
+      <div class="team-header">
       <h2>${team.name}</h2>
       <div class="team-header-buttons">
-        <button onclick="window.back()">← Till Startsida</button>
+        <button onclick="window.gotoStart()">← Till Startsida</button>
         <button onclick="window.editTeam()">Redigera Lag</button>
       </div>
     </div>
