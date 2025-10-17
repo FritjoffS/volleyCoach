@@ -754,19 +754,25 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
   
   // Ladda uppställning för aktuellt set
   function loadLineup(setNumber) {
+    console.log('Laddar uppställning för set', setNumber);
     const lineup = currentLineups[`set${setNumber}`];
+    console.log('Laddar uppställning:', lineup);
     
     // Rensa alla val
     document.querySelectorAll('.position-select').forEach(select => {
       select.value = '';
+      console.log(`Rensade position ${select.dataset.position}`);
     });
     document.getElementById('libero1Select').value = '';
+    console.log('Rensade libero 1');
     document.getElementById('libero2Select').value = '';
+    console.log('Rensade libero 2');
     
     if (lineup) {
       // Ladda positioner
       Object.entries(lineup.positions || {}).forEach(([pos, playerId]) => {
         const select = document.querySelector(`select[data-position="${pos}"]`);
+        console.log(`Laddar position ${pos} med spelare ${playerId}`);
         if (select) select.value = playerId;
       });
       
@@ -784,6 +790,7 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
     }
     
     updateLineupStatus();
+    console.log('Uppställning laddad för set', setNumber);
     updateAvailablePlayers();
   }
   
@@ -838,7 +845,8 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
       availablePlayers.forEach(([id, p]) => {
         // Visa spelare endast om den inte är vald någon annanstans, eller om det är den nuvarande valda
         if (!selectedPlayers.has(id) || id === currentValue) {
-          optionsHTML += `<option value="${id}">${p.name} (#${p.number || '?'}) - ${p.position || 'Okänd position'}</option>`;
+          /* optionsHTML += `<option value="${id}">${p.name} (#${p.number || '?'}) - ${p.position || 'Okänd position'}</option>`; */
+          optionsHTML += `<option value="${id}"> (${p.number || '?'}) ${p.name} - ${p.position || 'Okänd position'}</option>`;
         }
       });
       
@@ -879,6 +887,7 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
       
       // Ladda uppställning
       loadLineup(currentSet);
+      console.log('Bytte till Set', currentSet);
     };
   });
   
