@@ -792,6 +792,55 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
     updateLineupStatus();
     console.log('Uppställning laddad för set', setNumber);
     updateAvailablePlayers();
+
+    // Extra säkerhet: efter att dropdowns har återuppbyggts, se till att
+    // alla sparade värden verkligen appliceras. I vissa fall kan
+    // options ha ändrats så att värdet saknas — lägg då till en temporär
+    // option och applicera värdet igen.
+    if (lineup) {
+      Object.entries(lineup.positions || {}).forEach(([pos, playerId]) => {
+        const select = document.querySelector(`select[data-position="${pos}"]`);
+        if (!select) return;
+
+        // Om option för playerId saknas, skapa en fallback-option så att value kan sättas
+        if (![...select.options].some(o => o.value === playerId)) {
+          const player = (squadPlayers && squadPlayers[playerId]) || null;
+          const label = player ? ` (${player.number || '?'}) ${player.name} - ${player.position || 'Okänd position'}` : playerId;
+          const opt = document.createElement('option');
+          opt.value = playerId;
+          opt.text = label;
+          select.add(opt);
+        }
+
+        select.value = playerId;
+      });
+
+      // Libero fallback
+      const l1 = lineup.libero1 || lineup.libero || null;
+      const l2 = lineup.libero2 || null;
+      const lib1Sel = document.getElementById('libero1Select');
+      const lib2Sel = document.getElementById('libero2Select');
+      if (lib1Sel && l1) {
+        if (![...lib1Sel.options].some(o => o.value === l1)) {
+          const p = (squadPlayers && squadPlayers[l1]) || null;
+          const opt = document.createElement('option');
+          opt.value = l1;
+          opt.text = p ? `${p.name} (#${p.number || '?'}) - ${p.position || 'Okänd position'}` : l1;
+          lib1Sel.add(opt);
+        }
+        lib1Sel.value = l1;
+      }
+      if (lib2Sel && l2) {
+        if (![...lib2Sel.options].some(o => o.value === l2)) {
+          const p = (squadPlayers && squadPlayers[l2]) || null;
+          const opt = document.createElement('option');
+          opt.value = l2;
+          opt.text = p ? `${p.name} (#${p.number || '?'}) - ${p.position || 'Okänd position'}` : l2;
+          lib2Sel.add(opt);
+        }
+        lib2Sel.value = l2;
+      }
+    }
   }
   
   // Uppdatera status för uppställning
@@ -869,7 +918,7 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
       });
       
       liberoSelect.innerHTML = liberoOptionsHTML;
-      liberoSelect.value = currentLiberoValue; // Behåll det valda värdet
+        liberoSelect.value = currentLiberoValue; // Behåll det valda värdet
     });
   }
   
@@ -882,8 +931,11 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
       
       // Byt set
       currentSet = parseInt(button.dataset.set);
-      document.getElementById('currentSetNumber').textContent = currentSet;
-      document.getElementById('saveSetNumber').textContent = currentSet;
+      // Säkra åtkomst till DOM-element – de kan saknas beroende på vy
+      const currentSetEl = document.getElementById('currentSetNumber');
+      if (currentSetEl) currentSetEl.textContent = currentSet;
+      const saveSetEl = document.getElementById('saveSetNumber');
+      if (saveSetEl) saveSetEl.textContent = currentSet;
       
       // Ladda uppställning
       loadLineup(currentSet);
