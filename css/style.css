@@ -292,6 +292,20 @@ label {
   margin: 20px 0;
 }
 
+/* Utility: hide elements */
+.hidden {
+  opacity: 0;
+  transform: translateY(-8px);
+  pointer-events: none;
+  transition: opacity 240ms ease, transform 240ms ease;
+}
+
+/* Ensure these containers animate when hidden/shown */
+.team-header-buttons,
+nav {
+  transition: opacity 240ms ease, transform 240ms ease;
+}
+
 .activity-detail p {
   margin: 10px 0;
   line-height: 1.6;
