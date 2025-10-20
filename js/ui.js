@@ -947,7 +947,218 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
       liberoSelect.innerHTML = liberoOptionsHTML;
         liberoSelect.value = currentLiberoValue; // Behåll det valda värdet
     });
+
+    // Uppdatera visuella cirklar för spelare
+    updatePlayerCircles();
   }
+
+  // Skapa/uppdatera cirklar som visar spelarens nummer för varje position
+  function updatePlayerCircles() {
+    const positions = ['4','3','2','5','6','1'];
+    positions.forEach(pos => {
+      const slot = document.querySelector(`.position-slot[data-position="${pos}"]`);
+      if (!slot) return;
+      let circle = slot.querySelector('.player-circle');
+      const select = slot.querySelector('select.position-select');
+      const playerId = select ? select.value : '';
+      if (!circle) {
+        circle = document.createElement('div');
+        circle.className = 'player-circle empty clickable';
+        slot.insertBefore(circle, slot.querySelector('.player-slot'));
+      }
+      if (playerId) {
+        // Försök hitta spelarens nummer från squadPlayers eller från option-text
+        let num = '';
+        if (squadPlayers && squadPlayers[playerId] && squadPlayers[playerId].number) {
+          num = squadPlayers[playerId].number;
+        } else {
+          const opt = select.querySelector(`option[value="${playerId}"]`);
+          if (opt) {
+            const m = opt.text.match(/#(\d+)/);
+            if (m) num = m[1];
+          }
+        }
+        circle.textContent = num || '•';
+        circle.classList.remove('empty');
+      } else {
+        circle.textContent = '';
+        circle.classList.add('empty');
+      }
+    });
+
+    // Libero circles
+    const liberoSlots = ['libero1','libero2'];
+    liberoSlots.forEach((key, idx) => {
+      const container = document.querySelector(`.libero-slot:nth-child(${idx+1})`);
+      if (!container) return;
+      let circle = container.querySelector('.player-circle');
+      const select = document.getElementById(key + 'Select');
+      const playerId = select ? select.value : '';
+      if (!circle) {
+        circle = document.createElement('div');
+        circle.className = 'player-circle empty clickable';
+        // insert before the select (which is visually hidden)
+        container.insertBefore(circle, container.firstChild);
+      }
+      if (playerId) {
+        let num = '';
+        if (squadPlayers && squadPlayers[playerId] && squadPlayers[playerId].number) {
+          num = squadPlayers[playerId].number;
+        } else {
+          const opt = select && select.querySelector(`option[value="${playerId}"]`);
+          if (opt) {
+            const m = opt.text.match(/#(\d+)/);
+            if (m) num = m[1];
+          }
+        }
+        circle.textContent = num || '•';
+        circle.classList.remove('empty');
+      } else {
+        circle.textContent = '';
+        circle.classList.add('empty');
+      }
+    });
+  }
+
+  // --- Player picker popup implementation ---
+  // Create a single picker element that we reuse
+  let activePicker = null;
+  function createPicker() {
+    const picker = document.createElement('div');
+    picker.className = 'player-picker';
+    picker.style.display = 'none';
+    document.body.appendChild(picker);
+    return picker;
+  }
+
+  function closePicker() {
+    if (activePicker) {
+      activePicker.style.display = 'none';
+      activePicker.innerHTML = '';
+      activePicker = null;
+    }
+  }
+
+  // Build picker items for a given positionSlot and show at element
+  function openPickerForSlot(slot) {
+    if (!slot) return;
+    // Ensure we have the picker
+    if (!activePicker) activePicker = createPicker();
+    const picker = activePicker;
+    picker.innerHTML = '';
+
+    // Determine which players are currently selected so we can filter
+    const selectedPlayers = new Set();
+    document.querySelectorAll('.position-select').forEach(s => { if (s.value) selectedPlayers.add(s.value); });
+    const lib1 = document.getElementById('libero1Select')?.value; if (lib1) selectedPlayers.add(lib1);
+    const lib2 = document.getElementById('libero2Select')?.value; if (lib2) selectedPlayers.add(lib2);
+
+    // The underlying select for this slot
+    const select = slot.querySelector('select.position-select');
+    const currentVal = select ? select.value : '';
+
+    // Populate items: allow currentVal and any not already selected
+    availablePlayers.forEach(([id, p]) => {
+      if (!id) return;
+      if (selectedPlayers.has(id) && id !== currentVal) return; // skip
+      const item = document.createElement('div');
+      item.className = 'picker-item';
+      item.dataset.playerId = id;
+      item.innerHTML = `<div class="num">${p.number || '?'}</div><div class="name">${p.name} <span style="color:#666; font-size:12px;">${p.position ? ' - ' + p.position : ''}</span></div>`;
+      item.onclick = () => {
+        // Set select value and trigger change handlers
+        if (select) {
+          // If option missing, add fallback
+          if (![...select.options].some(o => o.value === id)) {
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.text = ` (${p.number || '?'}) ${p.name} - ${p.position || 'Okänd position'}`;
+            select.add(opt);
+          }
+          select.value = id;
+          // Trigger onchange logic
+          select.onchange && select.onchange();
+          updateLineupStatus();
+          updateAvailablePlayers();
+        }
+        closePicker();
+      };
+      picker.appendChild(item);
+    });
+
+    // Add an explicit 'clear' item to empty the slot
+    const clearItem = document.createElement('div');
+    clearItem.className = 'picker-item';
+    clearItem.innerHTML = `<div class="num">–</div><div class="name">Rensa plats</div>`;
+    clearItem.onclick = () => {
+      if (select) {
+        select.value = '';
+        select.onchange && select.onchange();
+        updateLineupStatus();
+        updateAvailablePlayers();
+      }
+      closePicker();
+    };
+    picker.appendChild(clearItem);
+
+    // Position picker next to the slot's circle and ensure it stays inside the viewport
+    const circle = slot.querySelector('.player-circle');
+    const rect = circle.getBoundingClientRect();
+    picker.style.display = 'block';
+    // Initial preferred placement: below the circle, left aligned with circle
+    const preferTop = rect.bottom + 6 + window.scrollY;
+    const preferLeft = rect.left + window.scrollX;
+    picker.style.top = preferTop + 'px';
+    picker.style.left = preferLeft + 'px';
+
+    // Allow browser to calculate size
+    // Re-measure using offsetWidth so width constraints from CSS are applied
+    const pickerWidth = picker.offsetWidth || 180;
+    const docWidth = document.documentElement.clientWidth || window.innerWidth;
+    const docHeight = document.documentElement.clientHeight || window.innerHeight;
+
+    // Compute adjusted left so picker stays within viewport (8px padding)
+    let adjustedLeft = preferLeft;
+    if (adjustedLeft + pickerWidth > docWidth - 8) {
+      adjustedLeft = Math.max(8 + window.scrollX, docWidth - 8 - pickerWidth + window.scrollX);
+    }
+    adjustedLeft = Math.max(8 + window.scrollX, adjustedLeft);
+
+    // Compute vertical position and clamp
+    const pickerHeight = picker.offsetHeight || 200;
+    let adjustedTop = preferTop;
+    if (adjustedTop + pickerHeight > docHeight - 8 + window.scrollY) {
+      // try place above
+      const aboveTop = rect.top + window.scrollY - pickerHeight - 6;
+      if (aboveTop >= window.scrollY + 8) {
+        adjustedTop = aboveTop;
+      } else {
+        adjustedTop = window.scrollY + 8;
+        picker.style.maxHeight = (docHeight - 24) + 'px';
+      }
+    }
+
+    picker.style.left = adjustedLeft + 'px';
+    picker.style.top = adjustedTop + 'px';
+  }
+
+  // Close picker on outside click or escape
+  document.addEventListener('click', (e) => {
+    if (!activePicker) return;
+    if (e.target.closest('.player-picker')) return;
+    if (e.target.closest('.player-circle')) return; // clicking another circle will open new picker
+    closePicker();
+  });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePicker(); });
+
+  // Delegate click handlers to circles: open picker for that slot
+  document.addEventListener('click', (e) => {
+    const circle = e.target.closest('.player-circle.clickable');
+    if (!circle) return;
+    const slot = circle.closest('.position-slot');
+    if (!slot) return;
+    openPickerForSlot(slot);
+  });
 
   // Rotera uppställningen ett steg medurs eller moturs (menar rotationsordning 1..6)
   function rotateLineup(direction) {
