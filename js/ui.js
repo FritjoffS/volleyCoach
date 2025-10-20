@@ -690,8 +690,8 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
           </div>
         </div>
         
+        <div class="court-header">ROTATIONSORDNING</div>
         <div class="volleyball-court">
-          <div class="court-header">ROTATIONSORDNING</div>
           <div class="court-grid">
             <div class="position-slot" data-position="4">
               <div class="position-number">4</div>
@@ -743,22 +743,22 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
               </div>
             </div>
           </div>
-          
-          <div class="libero-section">
-            <h5>Libero (max 2)</h5>
-            <div class="libero-slots">
-              <div class="libero-slot">
-                <label>Libero 1:</label>
-                <select id="libero1Select">
-                  <option value="">Välj libero...</option>
-                </select>
-              </div>
-              <div class="libero-slot">
-                <label>Libero 2:</label>
-                <select id="libero2Select">
-                  <option value="">Välj libero...</option>
-                </select>
-              </div>
+        </div>
+        
+        <div class="libero-section">
+          <h5>Libero (max 2)</h5>
+          <div class="libero-slots">
+            <div class="libero-slot">
+              <label>Libero 1:</label>
+              <select id="libero1Select">
+                <option value="">Välj libero...</option>
+              </select>
+            </div>
+            <div class="libero-slot">
+              <label>Libero 2:</label>
+              <select id="libero2Select">
+                <option value="">Välj libero...</option>
+              </select>
             </div>
           </div>
         </div>
