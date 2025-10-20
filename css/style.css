@@ -808,6 +808,18 @@ nav {
   margin: 0 auto;
 }
 
+/* Push the bottom row (grid items 4..6) a bit further down visually */
+.court-grid > .position-slot:nth-child(n+4) {
+  transform: translateY(200px);
+}
+
+@media (max-width: 520px) {
+  /* on narrow viewports use slightly smaller offset */
+  .court-grid > .position-slot:nth-child(n+4) {
+    transform: translateY(75px);
+  }
+}
+
 .position-slot {
   background: transparent;
   border: none;
