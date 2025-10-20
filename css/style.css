@@ -348,6 +348,7 @@ nav {
   border: 1px solid #dee2e6;
 }
 
+.player-circle.clickable { cursor: pointer; }
 .info-section h4 {
   color: #667eea;
   margin: 0 0 15px 0;
@@ -729,6 +730,55 @@ nav {
   padding: 30px;
   margin: 30px 0;
   position: relative;
+  /* Court background image (use court.png at repo root) */
+  background-image: url('../court.png');
+  background-repeat: no-repeat;
+  background-position: center top;
+  background-size: cover;
+}
+
+/* Hide native selects visually but keep them accessible for form submission and scripts */
+.position-select,
+#libero1Select,
+#libero2Select {
+  position: absolute !important;
+  left: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Player picker popup */
+.player-picker {
+  --player-picker-width: 220px; /* default consistent width */
+  position: absolute;
+  z-index: 2000;
+  background: white;
+  border: 1px solid rgba(0,0,0,0.12);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+  border-radius: 6px;
+  max-height: 220px;
+  overflow: auto;
+  width: var(--player-picker-width);
+  max-width: calc(100vw - 32px);
+  padding: 6px;
+}
+.player-picker .picker-item {
+  padding: 8px 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.player-picker .picker-item:hover { background: #f3f3f3; }
+.picker-item .num { width: 30px; font-weight: 700; color: #555; }
+.picker-item .name { flex: 1; font-size: 14px; color: #222; }
+
+/* Make circles smaller on narrow screens */
+@media (max-width: 520px) {
+  .player-circle { width: 40px; height: 40px; font-size: 14px; }
+  .player-picker { --player-picker-width: 160px; }
 }
 
 .court-header {
@@ -784,6 +834,34 @@ nav {
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+
+/* Player circle representation */
+.player-circle {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #667eea, #5a6fd8);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin: 0 auto;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+}
+
+.player-circle.empty {
+  background: #e9ecef;
+  color: #6c757d;
+}
+
+/* Keep select visible but smaller under the circle for editing */
+.player-slot .position-select {
+  width: 100%;
+  max-width: 160px;
+  margin: 4px auto 0 auto;
 }
 
 .position-select {
