@@ -882,9 +882,14 @@ nav {
     gap: 20px;
   }
   
+  /* På mobiler behåll 3 kolumner x 2 rader så positionsordningen alltid är:
+     rad1: 4,3,2
+     rad2: 5,6,1
+     Anpassa max-bredd så det får plats i smala vyer. */
   .court-grid {
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(3, 1fr);
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    max-width: 100%;
   }
   
   .lineup-tabs {
