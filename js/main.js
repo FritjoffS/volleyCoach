@@ -34,48 +34,42 @@ window.addEventListener('appinstalled', (e) => {
   console.log('PWA was installed successfully');
   // Rensa deferredPrompt så den inte kan användas igen
   deferredPrompt = null;
-  // Ta bort install-knappen
-  const installBtn = document.getElementById('installButton');
-  if (installBtn) {
-    installBtn.remove();
+  // Ta bort install-bannern
+  const installBanner = document.getElementById('installBanner');
+  if (installBanner) {
+    installBanner.remove();
   }
 });
 
 function showInstallButton() {
-  // Skapa install-knapp om den inte finns
-  if (!document.getElementById('installButton')) {
-    const button = document.createElement('button');
-    button.id = 'installButton';
-    button.innerHTML = '⬇️';
-    button.title = 'Installera app';
-    button.style.cssText = `
-      position: fixed; 
-      bottom: 20px; 
-      right: 20px; 
-      z-index: 1000; 
-      background: #28a745; 
-      color: white; 
-      border: none; 
-      padding: 12px; 
-      border-radius: 50%; 
-      cursor: pointer;
-      font-size: 18px;
-      width: 50px;
-      height: 50px;
-      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
-      transition: transform 0.2s ease;
+  // Skapa install-banner om den inte finns
+  if (!document.getElementById('installBanner')) {
+    const banner = document.createElement('div');
+    banner.id = 'installBanner';
+    banner.className = 'install-banner';
+    banner.innerHTML = `
+      <div class="install-banner-content">
+        <div class="install-banner-icon">📱</div>
+        <div class="install-banner-text">
+          <strong>Installera VolleyCoach</strong>
+          <span>Få snabb åtkomst från hemskärmen</span>
+        </div>
+        <button id="installButton" class="install-banner-button">
+          Installera
+        </button>
+        <button id="dismissInstallBanner" class="install-banner-dismiss" title="Stäng">
+          ✕
+        </button>
+      </div>
     `;
     
-    // Hover-effekt
-    button.onmouseenter = () => {
-      button.style.transform = 'scale(1.1)';
-    };
-    button.onmouseleave = () => {
-      button.style.transform = 'scale(1)';
-    };
+    document.body.insertBefore(banner, document.body.firstChild);
     
-    button.onclick = installApp;
-    document.body.appendChild(button);
+    document.getElementById('installButton').onclick = installApp;
+    document.getElementById('dismissInstallBanner').onclick = () => {
+      banner.style.animation = 'slideOut 0.3s ease-out';
+      setTimeout(() => banner.remove(), 300);
+    };
   }
 }
 
@@ -94,13 +88,15 @@ async function installApp() {
   
   if (result.outcome === 'accepted') {
     console.log('User accepted the install prompt');
-    // Ta bort install-knappen
-    const installBtn = document.getElementById('installButton');
-    if (installBtn) {
-      installBtn.remove();
-    }
   } else {
     console.log('User dismissed the install prompt');
+  }
+  
+  // Ta bort install-bannern
+  const installBanner = document.getElementById('installBanner');
+  if (installBanner) {
+    installBanner.style.animation = 'slideOut 0.3s ease-out';
+    setTimeout(() => installBanner.remove(), 300);
   }
   
   // Rensa deferredPrompt eftersom den bara kan användas en gång
