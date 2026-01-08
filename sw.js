@@ -1,5 +1,5 @@
 // Service Worker för PWA-funktionalitet
-const CACHE_NAME = 'volleycoach-v1.2.1';
+const CACHE_NAME = 'volleycoach-v1.2.2';
 
 // Använd relativa paths för att fungera både lokalt och i produktion
 const urlsToCache = [
@@ -11,7 +11,8 @@ const urlsToCache = [
   './js/main.js',
   './js/ui.js',
   './js/database.js',
-  './js/firebase-config.js'
+  './js/firebase-config.js',
+  './js/utils.js'
   // icon.png läggs till dynamiskt om den finns
 ];
 
