@@ -1,19 +1,20 @@
 // Service Worker för PWA-funktionalitet
-const CACHE_NAME = 'volleycoach-v1.2.3';
+const CACHE_NAME = 'volleycoach-v1.2.4';
 
 // Använd relativa paths för att fungera både lokalt och i produktion
 const urlsToCache = [
-  './',
-  './index.html',
-  './offline.html',
-  './manifest.json',
-  './css/style.css',
-  './js/main.js',
-  './js/ui.js',
-  './js/database.js',
-  './js/firebase-config.js',
-  './js/utils.js'
-  // icon.png läggs till dynamiskt om den finns
+  '/',
+  '/index.html',
+  '/offline.html',
+  '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/css/style.css',
+  '/js/main.js',
+  '/js/ui.js',
+  '/js/database.js',
+  '/js/firebase-config.js',
+  '/js/utils.js'
 ];
 
 // Installera Service Worker
