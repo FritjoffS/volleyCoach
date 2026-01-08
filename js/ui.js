@@ -245,11 +245,18 @@ export function renderPlayerForm(appDiv, player, onSave, onCancel, onDelete = nu
   `;
   document.getElementById('savePlayer').onclick = () => {
     const newPlayer = {
-      name: document.getElementById('playerName').value.trim(),
-      position: document.getElementById('playerPosition').value.trim(),
-      number: document.getElementById('playerNumber').value,
-      contactInfo: document.getElementById('playerContact').value.trim(),
+      name: document.getElementById('playerName').value.trim()
     };
+    
+    const position = document.getElementById('playerPosition').value.trim();
+    if (position) newPlayer.position = position;
+    
+    const number = document.getElementById('playerNumber').value;
+    if (number) newPlayer.number = parseInt(number);
+    
+    const contactInfo = document.getElementById('playerContact').value.trim();
+    if (contactInfo) newPlayer.contactInfo = contactInfo;
+    
     if(newPlayer.name) onSave(newPlayer);
   };
   document.getElementById('cancelPlayer').onclick = onCancel;

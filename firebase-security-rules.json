@@ -25,7 +25,10 @@
           ".validate": "newData.isString() && (newData.val() == '6manna' || newData.val() == '4manna' || newData.val() == 'Beach')"
         },
         
-        "players": {    
+        "players": {
+          ".read": true,
+          ".write": true,
+          
           "$playerId": {
             ".validate": "newData.hasChildren(['name'])",
             
@@ -38,7 +41,7 @@
             },
             
             "number": {
-              ".validate": "!newData.exists() || (newData.isNumber() && newData.val() >= 0 && newData.val() <= 99)"
+              ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 50) || (newData.isNumber() && newData.val() >= 0 && newData.val() <= 99)"
             },
             
             "contactInfo": {
@@ -63,10 +66,6 @@
               "totalPoints": {
                 ".validate": "newData.isNumber() && newData.val() >= 0"
               }
-            },
-            
-            "$other": {
-              ".validate": false
             }
           }
         },
