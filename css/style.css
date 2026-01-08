@@ -348,7 +348,36 @@ nav {
   border: 1px solid #dee2e6;
 }
 
-.player-circle.clickable { cursor: pointer; }
+.player-circle.clickable { 
+  cursor: pointer;
+  position: relative;
+}
+
+/* Touch feedback for mobile */
+.player-circle.clickable:active {
+  transform: scale(0.95);
+}
+
+/* Visual hint that circles are interactive */
+.player-circle.clickable::after {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border: 2px dashed transparent;
+  border-radius: 50%;
+  transition: border-color 0.3s ease;
+  pointer-events: none;
+}
+
+.player-circle.clickable.empty::after {
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+@media (hover: hover) {
+  .player-circle.clickable:hover::after {
+    border-color: rgba(102, 126, 234, 0.6);
+  }
+}
 .info-section h4 {
   color: #667eea;
   margin: 0 0 15px 0;
@@ -654,7 +683,6 @@ nav {
   font-size: 1.2rem;
 }
 
-/* Laguppställnings-hantering */
 .lineup-manager {
   background: #fff;
   border-radius: 10px;
@@ -665,6 +693,26 @@ nav {
   display: flex;
   border-bottom: 2px solid #dee2e6;
   margin: 20px 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.lineup-tabs::-webkit-scrollbar {
+  height: 4px;
+}
+
+.lineup-tabs::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.lineup-tabs::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 2px;
+}
+
+.lineup-tabs::-webkit-scrollbar-thumb:hover {
+  background: #555;
 }
 
 .tab-button {
@@ -700,6 +748,19 @@ nav {
   font-size: 1.5rem;
 }
 
+.lineup-hint {
+  font-size: 0.85rem;
+  color: #6c757d;
+  font-style: italic;
+  margin-top: 8px;
+}
+
+.lineup-hint-icon {
+  display: inline-block;
+  margin-right: 4px;
+  font-style: normal;
+}
+
 .lineup-status {
   margin: 10px 0;
 }
@@ -727,13 +788,13 @@ nav {
   background: #f8f9fa;
   border: 3px solid #667eea;
   border-radius: 15px;
-  padding: 12px;
+  padding: 20px;
   margin: 30px 0;
   position: relative;
   /* Court background image (use court.png at repo root) */
   background-image: url('../court.png');
   background-repeat: no-repeat;
-  background-position: center top;
+  background-position: center center;
   /* Keep original image proportions but scale height relative to viewport.
     --court-img-height defines the height of the court image (default 50vh).
     The container height equals the displayed image height so the image is shown fully
@@ -742,6 +803,9 @@ nav {
   --court-img-height: 50vh;
   height: var(--court-img-height);
   background-size: auto var(--court-img-height);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Hide native selects visually but keep them accessible for form submission and scripts */
@@ -766,10 +830,13 @@ nav {
   box-shadow: 0 6px 18px rgba(0,0,0,0.12);
   border-radius: 6px;
   max-height: 220px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   width: var(--player-picker-width);
   max-width: calc(100vw - 32px);
   padding: 6px;
+  /* Smooth scrolling */
+  -webkit-overflow-scrolling: touch;
 }
 .player-picker .picker-item {
   padding: 8px 10px;
@@ -777,17 +844,47 @@ nav {
   display: flex;
   align-items: center;
   gap: 8px;
+  border-radius: 4px;
+  transition: background-color 0.15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
 }
-.player-picker .picker-item:hover { background: #f3f3f3; }
+
+/* Hover effect for desktop */
+@media (hover: hover) {
+  .player-picker .picker-item:hover { 
+    background: #f3f3f3; 
+  }
+}
+
+/* Touch feedback for mobile */
+.player-picker .picker-item:active { 
+  background: #e9ecef; 
+  transform: scale(0.98);
+}
 .picker-item .num { width: 30px; font-weight: 700; color: #555; }
 .picker-item .name { flex: 1; font-size: 14px; color: #222; }
 
 /* Make circles smaller on narrow screens */
 @media (max-width: 520px) {
   .player-circle { width: 40px; height: 40px; font-size: 14px; }
-  .player-picker { --player-picker-width: 160px; }
+  .player-picker { --player-picker-width: 180px; }
   /* Reduce court image height on narrow screens */
   .volleyball-court { --court-img-height: 36vh; }
+  
+  /* Adjust position numbers for smaller circles */
+  .position-number {
+    width: 22px;
+    height: 22px;
+    font-size: 0.75rem;
+    transform: translate(-50%, -50%) translate(-20px, -6px);
+  }
+  
+  /* Reduce gap between positions */
+  .court-grid {
+    gap: 12px;
+  }
 }
 
 .court-header {
@@ -804,19 +901,32 @@ nav {
   grid-template-columns: repeat(3, 1fr);
   grid-template-rows: repeat(2, 1fr);
   gap: 20px;
+  column-gap: 60px;
   max-width: 600px;
   margin: 0 auto;
+  height: 100%;
 }
 
-/* Push the bottom row (grid items 4..6) a bit further down visually */
+/* Position the rows to match volleyball court layout
+   Top row (4,3,2): Upper half between net and back line
+   Bottom row (5,6,1): Lower half between net and back line */
+.court-grid > .position-slot:nth-child(-n+3) {
+  align-self: center;
+  transform: translateY(-35%);
+}
+
 .court-grid > .position-slot:nth-child(n+4) {
-  transform: translateY(200px);
+  align-self: center;
+  transform: translateY(25%);
 }
 
 @media (max-width: 520px) {
-  /* on narrow viewports use slightly smaller offset */
+  .court-grid > .position-slot:nth-child(-n+3) {
+    transform: translateY(-28%);
+  }
+  
   .court-grid > .position-slot:nth-child(n+4) {
-    transform: translateY(75px);
+    transform: translateY(20%);
   }
 }
 
@@ -983,6 +1093,22 @@ nav {
 
 .lineup-actions button {
   min-width: 140px;
+  flex: 1 1 auto;
+  max-width: 250px;
+}
+
+/* Ensure action buttons are touch-friendly on mobile */
+@media (max-width: 700px) {
+  .lineup-actions {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .lineup-actions button {
+    width: 100%;
+    max-width: 100%;
+    min-width: auto;
+  }
 }
 
 /* Responsiv för squad manager */
@@ -1000,6 +1126,8 @@ nav {
     grid-template-columns: repeat(3, 1fr);
     grid-template-rows: repeat(2, 1fr);
     max-width: 100%;
+    padding: 10px;
+    column-gap: 50px;
   }
   
   .lineup-tabs {
@@ -1008,6 +1136,153 @@ nav {
   
   .tab-button {
     min-width: 80px;
+    padding: 10px 15px;
+    font-size: 0.9rem;
+  }
+  
+  /* Adjust volleyball court on tablets */
+  .volleyball-court {
+    --court-img-height: 45vh;
+    padding: 10px;
+  }
+  
+  /* Libero section adjustments */
+  .libero-section {
+    padding: 15px;
+  }
+  
+  .libero-slots {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  #libero1Select, #libero2Select, #liberoSelect {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* Extra small screens - phones in portrait */
+@media (max-width: 480px) {
+  .volleyball-court {
+    --court-img-height: 32vh;
+    padding: 8px;
+    margin: 20px -10px;
+  }
+  
+  .court-grid {
+    gap: 8px;
+    column-gap: 40px;
+    padding: 5px;
+  }
+  
+  .player-circle { 
+    width: 36px; 
+    height: 36px; 
+    font-size: 13px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  }
+  
+  .position-number {
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+    transform: translate(-50%, -50%) translate(-18px, -5px);
+  }
+  
+  .player-picker { 
+    --player-picker-width: 200px;
+    max-height: 180px;
+    font-size: 0.9rem;
+  }
+  
+  .picker-item {
+    padding: 6px 8px;
+  }
+  
+  .picker-item .num { 
+    width: 25px; 
+    font-size: 13px;
+  }
+  
+  .picker-item .name { 
+    font-size: 13px;
+  }
+  
+  .tab-button {
+    min-width: 60px;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+  }
+  
+  .lineup-actions button {
+    font-size: 0.9rem;
+    padding: 10px 15px;
+  }
+  
+  .current-set-info h4 {
+    font-size: 1.3rem;
+  }
+  
+  .libero-section h5 {
+    font-size: 1rem;
+  }
+  
+  /* Make court header smaller */
+  .court-header {
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+  }
+  
+  /* Adjust position slot transform for smaller screens */
+  .court-grid > .position-slot:nth-child(-n+3) {
+    transform: translateY(-20%);
+  }
+  
+  .court-grid > .position-slot:nth-child(n+4) {
+    transform: translateY(15%);
+  }
+}
+
+/* Landscape orientation on small screens */
+@media (max-width: 900px) and (max-height: 500px) and (orientation: landscape) {
+  .volleyball-court {
+    --court-img-height: 50vh;
+  }
+  
+  .court-grid > .position-slot:nth-child(-n+3) {
+    transform: translateY(-28%);
+  }
+  
+  .court-grid > .position-slot:nth-child(n+4) {
+    transform: translateY(20%);
+  }
+  
+  .lineup-manager {
+    overflow-y: auto;
+    max-height: 90vh;
+  }
+  
+  .current-set-info {
+    margin: 10px 0;
+  }
+  
+  .current-set-info h4 {
+    font-size: 1.2rem;
+  }
+  
+  .lineup-hint {
+    font-size: 0.75rem;
+  }
+  
+  .libero-section {
+    margin-top: 15px;
+    padding: 12px;
+  }
+  
+  .lineup-actions {
+    margin: 15px 0;
+    gap: 10px;
   }
 }
 
