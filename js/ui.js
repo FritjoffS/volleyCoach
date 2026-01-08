@@ -773,7 +773,7 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
     const lineup = currentLineups[`set${setNumber}`];
     console.log('Laddar uppställning:', lineup);
     
-    // Rensa alla val
+    // STEG 1: Rensa alla val FÖRST så att inga spelare är "upptagna"
     document.querySelectorAll('.position-select').forEach(select => {
       select.value = '';
       console.log(`Rensade position ${select.dataset.position}`);
@@ -783,38 +783,15 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
     document.getElementById('libero2Select').value = '';
     console.log('Rensade libero 2');
     
+    // STEG 2: Bygg om dropdowns med alla tillgängliga spelare (nu när allt är rensat)
+    updateAvailablePlayers();
+    
+    // STEG 3: Sätt värden från sparad lineup
     if (lineup) {
-      // Ladda positioner
+      // Ladda positioner - lägg till options om de saknas
       Object.entries(lineup.positions || {}).forEach(([pos, playerId]) => {
         const select = document.querySelector(`select[data-position="${pos}"]`);
         console.log(`Laddar position ${pos} med spelare ${playerId}`);
-        if (select) select.value = playerId;
-      });
-      
-      // Ladda libero (stöd för både gamla och nya format)
-      if (lineup.libero) {
-        // Gamla format (en libero)
-        document.getElementById('libero1Select').value = lineup.libero;
-      }
-      if (lineup.libero1) {
-        document.getElementById('libero1Select').value = lineup.libero1;
-      }
-      if (lineup.libero2) {
-        document.getElementById('libero2Select').value = lineup.libero2;
-      }
-    }
-    
-    updateLineupStatus();
-    console.log('Uppställning laddad för set', setNumber);
-    updateAvailablePlayers();
-
-    // Extra säkerhet: efter att dropdowns har återuppbyggts, se till att
-    // alla sparade värden verkligen appliceras. I vissa fall kan
-    // options ha ändrats så att värdet saknas — lägg då till en temporär
-    // option och applicera värdet igen.
-    if (lineup) {
-      Object.entries(lineup.positions || {}).forEach(([pos, playerId]) => {
-        const select = document.querySelector(`select[data-position="${pos}"]`);
         if (!select) return;
 
         // Om option för playerId saknas, skapa en fallback-option så att value kan sättas
@@ -826,15 +803,15 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
           opt.text = label;
           select.add(opt);
         }
-
         select.value = playerId;
       });
-
-      // Libero fallback
+      
+      // Ladda libero (stöd för både gamla och nya format)
       const l1 = lineup.libero1 || lineup.libero || null;
       const l2 = lineup.libero2 || null;
       const lib1Sel = document.getElementById('libero1Select');
       const lib2Sel = document.getElementById('libero2Select');
+      
       if (lib1Sel && l1) {
         if (![...lib1Sel.options].some(o => o.value === l1)) {
           const p = (squadPlayers && squadPlayers[l1]) || null;
@@ -845,6 +822,7 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
         }
         lib1Sel.value = l1;
       }
+      
       if (lib2Sel && l2) {
         if (![...lib2Sel.options].some(o => o.value === l2)) {
           const p = (squadPlayers && squadPlayers[l2]) || null;
@@ -856,6 +834,12 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
         lib2Sel.value = l2;
       }
     }
+    
+    // STEG 4: Uppdatera status och visuella element
+    updateLineupStatus();
+    console.log('Uppställning laddad för set', setNumber);
+    // Uppdatera cirklarna för att visa valda spelare
+    updatePlayerCircles();
   }
   
   // Uppdatera status för uppställning
