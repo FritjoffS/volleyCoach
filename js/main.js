@@ -4,13 +4,18 @@ import {
   renderPlayerForm, renderPlayer, renderEditTeam, renderTrainingForm, 
   renderMatchForm, renderTrainingDetail, renderMatchDetail, renderSquadManager,
   renderLineupManager, showLoading, showError 
-} from './ui.js?v=1.1.0';
+} from './ui.js?v=1.2.0';
 import { 
   listTeams, createTeam, getTeam, addPlayer, updateTeam, deleteTeam, 
   updatePlayer, deletePlayer, addTraining, addMatch, getActivities,
   updateTraining, updateMatch, deleteTraining, deleteMatch, updateMatchSquad, getMatch,
   saveSetLineup, getMatchLineups, deleteSetLineup
-} from './database.js?v=1.1.0';
+} from './database.js?v=1.2.0';
+import {
+  validateTeamName, validatePlayerName, validatePlayerNumber, validateContact,
+  validateDate, validateTime, validateOpponent, confirmDelete, showSuccess,
+  showErrorToast, handleError
+} from './utils.js?v=1.2.0';
 
 // PWA Installation
 let deferredPrompt;
@@ -116,7 +121,7 @@ function showStart() {
       renderStart(document.getElementById('app'), teams, showTeam, showNewTeam);
     })
     .catch(error => {
-      console.error('Fel vid laddning av lag:', error);
+      handleError(error, 'vid laddning av lag');
       showError(document.getElementById('app'), 'Kunde inte ladda lag. Kontrollera din internetanslutning.', showStart);
     });
 }
@@ -127,49 +132,89 @@ window.gotoStart = showStart;
 // Visa formulär att skapa nytt lag
 function showNewTeam() {
   renderNewTeam(document.getElementById('app'), async (teamData) => {
-    const teamId = await createTeam(teamData.name, teamData.type, teamData.mode);
-    currentTeamId = teamId;
-    showTeam(teamId);
+    // Validera lagnamn
+    const nameValidation = validateTeamName(teamData.name);
+    if (!nameValidation.valid) {
+      showErrorToast(nameValidation.error);
+      return;
+    }
+    
+    try {
+      showLoading(document.getElementById('app'), "Skapar lag...");
+      const teamId = await createTeam(teamData.name, teamData.type, teamData.mode);
+      currentTeamId = teamId;
+      showSuccess('Lag skapat!');
+      showTeam(teamId);
+    } catch (error) {
+      handleError(error, 'vid skapande av lag');
+    }
   }, showStart);
 }
 
 // Visa lagets sida med meny
 function showTeam(teamId) {
   currentTeamId = teamId;
-  getTeam(teamId).then(team => {
-    renderTeam(document.getElementById('app'), team, showActivities, showPlayers, showEditTeam, showStart);
-  });
+  showLoading(document.getElementById('app'), "Laddar lag...");
+  getTeam(teamId)
+    .then(team => {
+      if (!team) {
+        showErrorToast('Lag hittades inte');
+        showStart();
+        return;
+      }
+      renderTeam(document.getElementById('app'), team, showActivities, showPlayers, showEditTeam, showStart);
+    })
+    .catch(error => {
+      handleError(error, 'vid laddning av lag');
+      showStart();
+    });
 }
 
 // Visa redigera lag
 function showEditTeam() {
-  getTeam(currentTeamId).then(team => {
-    renderEditTeam(
-      document.getElementById('app'), 
-      team,
-      async (teamData) => {
-        try {
-          showLoading(document.getElementById('app'), "Sparar ändringar...");
-          await updateTeam(currentTeamId, teamData);
-          showTeam(currentTeamId);
-        } catch (error) {
-          console.error('Fel vid uppdatering av lag:', error);
-          showError(document.getElementById('app'), 'Kunde inte spara ändringar.', () => showEditTeam());
+  showLoading(document.getElementById('app'), "Laddar laguppgifter...");
+  getTeam(currentTeamId)
+    .then(team => {
+      renderEditTeam(
+        document.getElementById('app'), 
+        team,
+        async (teamData) => {
+          // Validera lagnamn
+          const nameValidation = validateTeamName(teamData.name);
+          if (!nameValidation.valid) {
+            showErrorToast(nameValidation.error);
+            return;
+          }
+          
+          try {
+            showLoading(document.getElementById('app'), "Sparar ändringar...");
+            await updateTeam(currentTeamId, teamData);
+            showSuccess('Lag uppdaterat!');
+            showTeam(currentTeamId);
+          } catch (error) {
+            handleError(error, 'vid uppdatering av lag');
+          }
+        },
+        () => showTeam(currentTeamId),
+        async () => {
+          const confirmed = await confirmDelete('laget', team.name);
+          if (!confirmed) return;
+          
+          try {
+            showLoading(document.getElementById('app'), "Tar bort lag...");
+            await deleteTeam(currentTeamId);
+            showSuccess('Lag borttaget');
+            showStart();
+          } catch (error) {
+            handleError(error, 'vid borttagning av lag');
+          }
         }
-      },
-      () => showTeam(currentTeamId),
-      async () => {
-        try {
-          showLoading(document.getElementById('app'), "Tar bort lag...");
-          await deleteTeam(currentTeamId);
-          showStart();
-        } catch (error) {
-          console.error('Fel vid borttagning av lag:', error);
-          showError(document.getElementById('app'), 'Kunde inte ta bort lag.', () => showEditTeam());
-        }
-      }
-    );
-  });
+      );
+    })
+    .catch(error => {
+      handleError(error, 'vid laddning av laguppgifter');
+      showTeam(currentTeamId);
+    });
 }
 
 // Visa lista över aktiviteter (träningar och matcher)
@@ -188,76 +233,150 @@ function showActivities() {
       );
     })
     .catch(error => {
-      console.error('Fel vid laddning av aktiviteter:', error);
+      handleError(error, 'vid laddning av aktiviteter');
       showError(document.getElementById('teamContent'), 'Kunde inte ladda aktiviteter.', showActivities);
     });
 }
 
 // Visa lista med spelare
 function showPlayers() {
-  getTeam(currentTeamId).then(team => {
-    const players = team.players || {};
-    renderPlayers(
-      document.getElementById('teamContent'), 
-      players, 
-      showNewPlayer, 
-      showPlayer,
-      () => showTeam(currentTeamId) // Tillbaka till lag
-    );
-  });
+  showLoading(document.getElementById('teamContent'), "Laddar spelare...");
+  getTeam(currentTeamId)
+    .then(team => {
+      const players = team.players || {};
+      renderPlayers(
+        document.getElementById('teamContent'), 
+        players, 
+        showNewPlayer, 
+        showPlayer,
+        () => showTeam(currentTeamId) // Tillbaka till lag
+      );
+    })
+    .catch(error => {
+      handleError(error, 'vid laddning av spelare');
+      showError(document.getElementById('teamContent'), 'Kunde inte ladda spelare.', () => showTeam(currentTeamId));
+    });
 }
 
 // Visa detaljer och info för en spelare
 function showPlayer(playerId) {
   currentPlayerId = playerId;
-  getTeam(currentTeamId).then(team => {
-    const player = team.players ? team.players[playerId] : null;
-    if (!player) {
-      alert('Spelare finns ej!');
-      return;
-    }
-    renderPlayer(document.getElementById('teamContent'), player, showEditPlayer, showPlayers);
-  });
+  showLoading(document.getElementById('teamContent'), "Laddar spelaruppgifter...");
+  getTeam(currentTeamId)
+    .then(team => {
+      const player = team.players ? team.players[playerId] : null;
+      if (!player) {
+        showErrorToast('Spelare finns ej!');
+        showPlayers();
+        return;
+      }
+      renderPlayer(document.getElementById('teamContent'), player, showEditPlayer, showPlayers);
+    })
+    .catch(error => {
+      handleError(error, 'vid laddning av spelaruppgifter');
+      showPlayers();
+    });
 }
 
 // Visa formulär för ny spelare
 function showNewPlayer() {
   renderPlayerForm(document.getElementById('teamContent'), null, async (playerData) => {
-    await addPlayer(currentTeamId, playerData);
-    showPlayers();
+    // Validera spelardata
+    const nameValidation = validatePlayerName(playerData.name);
+    if (!nameValidation.valid) {
+      showErrorToast(nameValidation.error);
+      return;
+    }
+    
+    if (playerData.number) {
+      const numberValidation = validatePlayerNumber(playerData.number);
+      if (!numberValidation.valid) {
+        showErrorToast(numberValidation.error);
+        return;
+      }
+    }
+    
+    if (playerData.contactInfo) {
+      const contactValidation = validateContact(playerData.contactInfo);
+      if (!contactValidation.valid) {
+        showErrorToast(contactValidation.error);
+        return;
+      }
+    }
+    
+    try {
+      showLoading(document.getElementById('teamContent'), "Lägger till spelare...");
+      await addPlayer(currentTeamId, playerData);
+      showSuccess('Spelare tillagd!');
+      showPlayers();
+    } catch (error) {
+      handleError(error, 'vid tillägg av spelare');
+    }
   }, showPlayers);
 }
 
 // Visa formulär för att redigera spelare
 function showEditPlayer() {
-  getTeam(currentTeamId).then(team => {
-    const player = team.players[currentPlayerId];
-    renderPlayerForm(
-      document.getElementById('teamContent'), 
-      player, 
-      async (playerData) => {
-        try {
-          showLoading(document.getElementById('teamContent'), "Sparar ändringar...");
-          await updatePlayer(currentTeamId, currentPlayerId, playerData);
-          showPlayer(currentPlayerId);
-        } catch (error) {
-          console.error('Fel vid uppdatering av spelare:', error);
-          showError(document.getElementById('teamContent'), 'Kunde inte spara ändringar.', () => showEditPlayer());
+  showLoading(document.getElementById('teamContent'), "Laddar spelaruppgifter...");
+  getTeam(currentTeamId)
+    .then(team => {
+      const player = team.players[currentPlayerId];
+      renderPlayerForm(
+        document.getElementById('teamContent'), 
+        player, 
+        async (playerData) => {
+          // Validera spelardata
+          const nameValidation = validatePlayerName(playerData.name);
+          if (!nameValidation.valid) {
+            showErrorToast(nameValidation.error);
+            return;
+          }
+          
+          if (playerData.number) {
+            const numberValidation = validatePlayerNumber(playerData.number);
+            if (!numberValidation.valid) {
+              showErrorToast(numberValidation.error);
+              return;
+            }
+          }
+          
+          if (playerData.contactInfo) {
+            const contactValidation = validateContact(playerData.contactInfo);
+            if (!contactValidation.valid) {
+              showErrorToast(contactValidation.error);
+              return;
+            }
+          }
+          
+          try {
+            showLoading(document.getElementById('teamContent'), "Sparar ändringar...");
+            await updatePlayer(currentTeamId, currentPlayerId, playerData);
+            showSuccess('Spelare uppdaterad!');
+            showPlayer(currentPlayerId);
+          } catch (error) {
+            handleError(error, 'vid uppdatering av spelare');
+          }
+        }, 
+        () => showPlayer(currentPlayerId),
+        async () => {
+          const confirmed = await confirmDelete('spelaren', player.name);
+          if (!confirmed) return;
+          
+          try {
+            showLoading(document.getElementById('teamContent'), "Tar bort spelare...");
+            await deletePlayer(currentTeamId, currentPlayerId);
+            showSuccess('Spelare borttagen');
+            showPlayers();
+          } catch (error) {
+            handleError(error, 'vid borttagning av spelare');
+          }
         }
-      }, 
-      () => showPlayer(currentPlayerId),
-      async () => {
-        try {
-          showLoading(document.getElementById('teamContent'), "Tar bort spelare...");
-          await deletePlayer(currentTeamId, currentPlayerId);
-          showPlayers();
-        } catch (error) {
-          console.error('Fel vid borttagning av spelare:', error);
-          showError(document.getElementById('teamContent'), 'Kunde inte ta bort spelare.', () => showEditPlayer());
-        }
-      }
-    );
-  });
+      );
+    })
+    .catch(error => {
+      handleError(error, 'vid laddning av spelaruppgifter');
+      showPlayers();
+    });
 }
 
 // Visa formulär för ny träning
@@ -266,13 +385,28 @@ function showNewTraining() {
     document.getElementById('teamContent'), 
     null, 
     async (trainingData) => {
+      // Validera träningsdata
+      const dateValidation = validateDate(trainingData.date);
+      if (!dateValidation.valid) {
+        showErrorToast(dateValidation.error);
+        return;
+      }
+      
+      if (trainingData.time) {
+        const timeValidation = validateTime(trainingData.time);
+        if (!timeValidation.valid) {
+          showErrorToast(timeValidation.error);
+          return;
+        }
+      }
+      
       try {
         showLoading(document.getElementById('teamContent'), "Skapar träning...");
         await addTraining(currentTeamId, trainingData);
+        showSuccess('Träning skapad!');
         showActivities();
       } catch (error) {
-        console.error('Fel vid skapande av träning:', error);
-        showError(document.getElementById('teamContent'), 'Kunde inte skapa träning.', showNewTraining);
+        handleError(error, 'vid skapande av träning');
       }
     }, 
     showActivities
@@ -285,13 +419,34 @@ function showNewMatch() {
     document.getElementById('teamContent'), 
     null, 
     async (matchData) => {
+      // Validera matchdata
+      const dateValidation = validateDate(matchData.date);
+      if (!dateValidation.valid) {
+        showErrorToast(dateValidation.error);
+        return;
+      }
+      
+      if (matchData.time) {
+        const timeValidation = validateTime(matchData.time);
+        if (!timeValidation.valid) {
+          showErrorToast(timeValidation.error);
+          return;
+        }
+      }
+      
+      const opponentValidation = validateOpponent(matchData.opponent);
+      if (!opponentValidation.valid) {
+        showErrorToast(opponentValidation.error);
+        return;
+      }
+      
       try {
         showLoading(document.getElementById('teamContent'), "Skapar match...");
         await addMatch(currentTeamId, matchData);
+        showSuccess('Match skapad!');
         showActivities();
       } catch (error) {
-        console.error('Fel vid skapande av match:', error);
-        showError(document.getElementById('teamContent'), 'Kunde inte skapa match.', showNewMatch);
+        handleError(error, 'vid skapande av match');
       }
     }, 
     showActivities
@@ -301,103 +456,172 @@ function showNewMatch() {
 // Visa detaljer för träning
 function showTraining(trainingId) {
   currentTrainingId = trainingId;
-  getActivities(currentTeamId).then(activities => {
-    const training = activities.trainings[trainingId];
-    if (!training) {
-      showError(document.getElementById('teamContent'), 'Träning hittades inte.');
-      return;
-    }
-    renderTrainingDetail(
-      document.getElementById('teamContent'), 
-      training, 
-      showEditTraining, 
-      showActivities
-    );
-  });
+  showLoading(document.getElementById('teamContent'), "Laddar träning...");
+  getActivities(currentTeamId)
+    .then(activities => {
+      const training = activities.trainings[trainingId];
+      if (!training) {
+        showErrorToast('Träning hittades inte');
+        showActivities();
+        return;
+      }
+      renderTrainingDetail(
+        document.getElementById('teamContent'), 
+        training, 
+        showEditTraining, 
+        showActivities
+      );
+    })
+    .catch(error => {
+      handleError(error, 'vid laddning av träning');
+      showActivities();
+    });
 }
 
 // Visa detaljer för match
 function showMatch(matchId) {
   currentMatchId = matchId;
-  getActivities(currentTeamId).then(activities => {
-    const match = activities.matches[matchId];
-    if (!match) {
-      showError(document.getElementById('teamContent'), 'Match hittades inte.');
-      return;
-    }
-    renderMatchDetail(
-      document.getElementById('teamContent'), 
-      match, 
-      showEditMatch, 
-      showActivities,
-      () => showSquadManager(matchId), // Hantera trupp
-      () => showLineupManager(matchId) // Hantera laguppställningar
-    );
-  });
+  showLoading(document.getElementById('teamContent'), "Laddar match...");
+  getActivities(currentTeamId)
+    .then(activities => {
+      const match = activities.matches[matchId];
+      if (!match) {
+        showErrorToast('Match hittades inte');
+        showActivities();
+        return;
+      }
+      renderMatchDetail(
+        document.getElementById('teamContent'), 
+        match, 
+        showEditMatch, 
+        showActivities,
+        () => showSquadManager(matchId), // Hantera trupp
+        () => showLineupManager(matchId) // Hantera laguppställningar
+      );
+    })
+    .catch(error => {
+      handleError(error, 'vid laddning av match');
+      showActivities();
+    });
 }
 
 // Visa formulär för att redigera träning
 function showEditTraining() {
-  getActivities(currentTeamId).then(activities => {
-    const training = activities.trainings[currentTrainingId];
-    renderTrainingForm(
-      document.getElementById('teamContent'), 
-      training, 
-      async (trainingData) => {
-        try {
-          showLoading(document.getElementById('teamContent'), "Sparar ändringar...");
-          await updateTraining(currentTeamId, currentTrainingId, trainingData);
-          showTraining(currentTrainingId);
-        } catch (error) {
-          console.error('Fel vid uppdatering av träning:', error);
-          showError(document.getElementById('teamContent'), 'Kunde inte spara ändringar.', showEditTraining);
+  showLoading(document.getElementById('teamContent'), "Laddar träningsuppgifter...");
+  getActivities(currentTeamId)
+    .then(activities => {
+      const training = activities.trainings[currentTrainingId];
+      renderTrainingForm(
+        document.getElementById('teamContent'), 
+        training, 
+        async (trainingData) => {
+          // Validera träningsdata
+          const dateValidation = validateDate(trainingData.date);
+          if (!dateValidation.valid) {
+            showErrorToast(dateValidation.error);
+            return;
+          }
+          
+          if (trainingData.time) {
+            const timeValidation = validateTime(trainingData.time);
+            if (!timeValidation.valid) {
+              showErrorToast(timeValidation.error);
+              return;
+            }
+          }
+          
+          try {
+            showLoading(document.getElementById('teamContent'), "Sparar ändringar...");
+            await updateTraining(currentTeamId, currentTrainingId, trainingData);
+            showSuccess('Träning uppdaterad!');
+            showTraining(currentTrainingId);
+          } catch (error) {
+            handleError(error, 'vid uppdatering av träning');
+          }
+        }, 
+        () => showTraining(currentTrainingId),
+        async () => {
+          const confirmed = await confirmDelete('träningen', training.date || 'denna träning');
+          if (!confirmed) return;
+          
+          try {
+            showLoading(document.getElementById('teamContent'), "Tar bort träning...");
+            await deleteTraining(currentTeamId, currentTrainingId);
+            showSuccess('Träning borttagen');
+            showActivities();
+          } catch (error) {
+            handleError(error, 'vid borttagning av träning');
+          }
         }
-      }, 
-      () => showTraining(currentTrainingId),
-      async () => {
-        try {
-          showLoading(document.getElementById('teamContent'), "Tar bort träning...");
-          await deleteTraining(currentTeamId, currentTrainingId);
-          showActivities();
-        } catch (error) {
-          console.error('Fel vid borttagning av träning:', error);
-          showError(document.getElementById('teamContent'), 'Kunde inte ta bort träning.', showEditTraining);
-        }
-      }
-    );
-  });
+      );
+    })
+    .catch(error => {
+      handleError(error, 'vid laddning av träningsuppgifter');
+      showActivities();
+    });
 }
 
 // Visa formulär för att redigera match
 function showEditMatch() {
-  getActivities(currentTeamId).then(activities => {
-    const match = activities.matches[currentMatchId];
-    renderMatchForm(
-      document.getElementById('teamContent'), 
-      match, 
-      async (matchData) => {
-        try {
-          showLoading(document.getElementById('teamContent'), "Sparar ändringar...");
-          await updateMatch(currentTeamId, currentMatchId, matchData);
-          showMatch(currentMatchId);
-        } catch (error) {
-          console.error('Fel vid uppdatering av match:', error);
-          showError(document.getElementById('teamContent'), 'Kunde inte spara ändringar.', showEditMatch);
+  showLoading(document.getElementById('teamContent'), "Laddar matchuppgifter...");
+  getActivities(currentTeamId)
+    .then(activities => {
+      const match = activities.matches[currentMatchId];
+      renderMatchForm(
+        document.getElementById('teamContent'), 
+        match, 
+        async (matchData) => {
+          // Validera matchdata
+          const dateValidation = validateDate(matchData.date);
+          if (!dateValidation.valid) {
+            showErrorToast(dateValidation.error);
+            return;
+          }
+          
+          if (matchData.time) {
+            const timeValidation = validateTime(matchData.time);
+            if (!timeValidation.valid) {
+              showErrorToast(timeValidation.error);
+              return;
+            }
+          }
+          
+          const opponentValidation = validateOpponent(matchData.opponent);
+          if (!opponentValidation.valid) {
+            showErrorToast(opponentValidation.error);
+            return;
+          }
+          
+          try {
+            showLoading(document.getElementById('teamContent'), "Sparar ändringar...");
+            await updateMatch(currentTeamId, currentMatchId, matchData);
+            showSuccess('Match uppdaterad!');
+            showMatch(currentMatchId);
+          } catch (error) {
+            handleError(error, 'vid uppdatering av match');
+          }
+        }, 
+        () => showMatch(currentMatchId),
+        async () => {
+          const matchName = `${match.date || 'match'} vs ${match.opponent || 'TBD'}`;
+          const confirmed = await confirmDelete('matchen', matchName);
+          if (!confirmed) return;
+          
+          try {
+            showLoading(document.getElementById('teamContent'), "Tar bort match...");
+            await deleteMatch(currentTeamId, currentMatchId);
+            showSuccess('Match borttagen');
+            showActivities();
+          } catch (error) {
+            handleError(error, 'vid borttagning av match');
+          }
         }
-      }, 
-      () => showMatch(currentMatchId),
-      async () => {
-        try {
-          showLoading(document.getElementById('teamContent'), "Tar bort match...");
-          await deleteMatch(currentTeamId, currentMatchId);
-          showActivities();
-        } catch (error) {
-          console.error('Fel vid borttagning av match:', error);
-          showError(document.getElementById('teamContent'), 'Kunde inte ta bort match.', showEditMatch);
-        }
-      }
-    );
-  });
+      );
+    })
+    .catch(error => {
+      handleError(error, 'vid laddning av matchuppgifter');
+      showActivities();
+    });
 }
 
 // Visa spelartrupp-hantering för match
@@ -409,7 +633,8 @@ function showSquadManager(matchId) {
     getTeam(currentTeamId)
   ]).then(([match, team]) => {
     if (!match) {
-      showError(document.getElementById('teamContent'), 'Match hittades inte.');
+      showErrorToast('Match hittades inte');
+      showActivities();
       return;
     }
     
@@ -422,17 +647,16 @@ function showSquadManager(matchId) {
         try {
           showLoading(document.getElementById('teamContent'), "Sparar trupp...");
           await updateMatchSquad(currentTeamId, matchId, squadData);
+          showSuccess('Trupp sparad!');
           showMatch(matchId); // Tillbaka till matchdetaljer
         } catch (error) {
-          console.error('Fel vid sparande av trupp:', error);
-          showError(document.getElementById('teamContent'), 'Kunde inte spara trupp.', () => showSquadManager(matchId));
+          handleError(error, 'vid sparande av trupp');
         }
       },
       () => showMatch(matchId) // Tillbaka utan att spara
     );
   }).catch(error => {
-    console.error('Fel vid laddning av spelartrupp-data:', error);
-    showError(document.getElementById('teamContent'), 'Kunde inte ladda data för spelartrupp.', () => showSquadManager(matchId));
+    handleError(error, 'vid laddning av spelartrupp-data');
   });
 }
 
@@ -446,7 +670,8 @@ function showLineupManager(matchId) {
     getTeam(currentTeamId)
   ]).then(([match, lineups, team]) => {
     if (!match) {
-      showError(document.getElementById('teamContent'), 'Match hittades inte.');
+      showErrorToast('Match hittades inte');
+      showActivities();
       return;
     }
     
@@ -476,11 +701,15 @@ function showLineupManager(matchId) {
     
     // Setup callback för att spara individuellt set
     window.saveCurrentSetData = async (setNumber, lineupData) => {
-      await saveSetLineup(currentTeamId, matchId, setNumber, lineupData);
+      try {
+        await saveSetLineup(currentTeamId, matchId, setNumber, lineupData);
+        showSuccess(`Set ${setNumber} laguppställning sparad!`);
+      } catch (error) {
+        handleError(error, 'vid sparande av laguppställning');
+      }
     };
   }).catch(error => {
-    console.error('Fel vid laddning av laguppställnings-data:', error);
-    showError(document.getElementById('teamContent'), 'Kunde inte ladda data för laguppställningar.', () => showLineupManager(matchId));
+    handleError(error, 'vid laddning av laguppställnings-data');
   });
 }
 
