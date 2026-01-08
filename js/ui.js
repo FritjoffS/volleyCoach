@@ -255,11 +255,7 @@ export function renderPlayerForm(appDiv, player, onSave, onCancel, onDelete = nu
   document.getElementById('cancelPlayer').onclick = onCancel;
   
   if(isEdit && onDelete && document.getElementById('deletePlayer')) {
-    document.getElementById('deletePlayer').onclick = () => {
-      if(confirm(`Är du säker på att du vill ta bort spelaren "${player.name}"?`)) {
-        onDelete();
-      }
-    };
+    document.getElementById('deletePlayer').onclick = onDelete;
   }
 }
 
@@ -294,11 +290,7 @@ export function renderEditTeam(appDiv, team, onSave, onCancel, onDelete) {
     if(name) onSave({ name, type, mode });
   };
   document.getElementById('cancelEditTeam').onclick = onCancel;
-  document.getElementById('deleteTeam').onclick = () => {
-    if(confirm(`Är du säker på att du vill ta bort laget "${team.name}"? Detta kan inte ångras.`)) {
-      onDelete();
-    }
-  };
+  document.getElementById('deleteTeam').onclick = onDelete;
 }
 
 // Renderar formulär för träning
@@ -329,11 +321,7 @@ export function renderTrainingForm(appDiv, training, onSave, onCancel, onDelete 
   document.getElementById('cancelTraining').onclick = onCancel;
   
   if(isEdit && onDelete && document.getElementById('deleteTraining')) {
-    document.getElementById('deleteTraining').onclick = () => {
-      if(confirm('Är du säker på att du vill ta bort denna träning?')) {
-        onDelete();
-      }
-    };
+    document.getElementById('deleteTraining').onclick = onDelete;
   }
 }
 
@@ -376,11 +364,7 @@ export function renderMatchForm(appDiv, match, onSave, onCancel, onDelete = null
   document.getElementById('cancelMatch').onclick = onCancel;
   
   if(isEdit && onDelete && document.getElementById('deleteMatch')) {
-    document.getElementById('deleteMatch').onclick = () => {
-      if(confirm('Är du säker på att du vill ta bort denna match?')) {
-        onDelete();
-      }
-    };
+    document.getElementById('deleteMatch').onclick = onDelete;
   }
 }
 
