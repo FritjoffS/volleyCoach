@@ -4,6 +4,9 @@
     ".write": false,
     
     "teams": {
+      ".read": true,
+      ".write": true,
+      
       "$teamId": {
         ".read": true,
         ".write": true,
