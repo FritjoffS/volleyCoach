@@ -19,7 +19,27 @@ En komplett webbapplikation för att hantera volleybolllag med spelare, träning
 
 ## 🚀 Installation och körning
 
-### 1. Firebase-konfiguration
+### 1. Skapa app-ikoner
+
+Appen behöver ikoner för att fungera som PWA. Du kan antingen:
+
+**Alternativ A: Använd SVG-mallen**
+```bash
+# Öppna icon-template.svg och exportera till PNG
+# Storlekar: 192x192 och 512x512
+```
+
+**Alternativ B: Skapa egna ikoner**
+- Se instruktioner i `ICONS_NEEDED.md`
+- Ikoner ska heta `icon-192.png` och `icon-512.png`
+
+**Alternativ C: Snabb test (ImageMagick)**
+```bash
+convert -size 192x192 xc:#667eea -gravity center -pointsize 80 -fill white -annotate +0+0 "VC" icon-192.png
+convert -size 512x512 xc:#667eea -gravity center -pointsize 220 -fill white -annotate +0+0 "VC" icon-512.png
+```
+
+### 2. Firebase-konfiguration
 Redigera `js/firebase-config.js` och fyll i din Firebase-konfiguration:
 
 ```javascript
@@ -34,7 +54,13 @@ const firebaseConfig = {
 };
 ```
 
-### 2. Starta lokal server
+**Viktigt om säkerhet**: 
+- Firebase API-nycklar är designade att vara publika och kan säkert finnas i koden
+- Det verkliga skyddet är **Firebase Security Rules**
+- Följ guiden i `FIREBASE_SECURITY.md` för att sätta upp säkerhetsregler
+- Se `firebase-security-rules.json` för färdiga regler att kopiera
+
+### 3. Starta lokal server
 För att testa appen lokalt (krävs för JavaScript-moduler):
 
 **Med PowerShell (Windows):**
@@ -53,7 +79,7 @@ python -m http.server 8000
 npx http-server -p 8000
 ```
 
-### 3. Öppna appen
+### 4. Öppna appen
 Gå till `http://localhost:8000` i din webbläsare.
 
 ## 📱 PWA-installation
