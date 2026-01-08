@@ -1,0 +1,22 @@
+<!-- Placeholder SVG ikon - konvertera till PNG för produktion -->
+<svg width="512" height="512" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bakgrund -->
+  <rect width="512" height="512" fill="#667eea"/>
+  
+  <!-- Volleyboll -->
+  <circle cx="256" cy="256" r="140" fill="#ffffff" stroke="#667eea" stroke-width="8"/>
+  
+  <!-- Volleyboll linjer -->
+  <path d="M 256 116 Q 256 200, 180 256 Q 256 312, 256 396" 
+        stroke="#667eea" stroke-width="8" fill="none"/>
+  <path d="M 256 116 Q 256 200, 332 256 Q 256 312, 256 396" 
+        stroke="#667eea" stroke-width="8" fill="none"/>
+  <ellipse cx="256" cy="256" rx="140" ry="50" 
+           stroke="#667eea" stroke-width="8" fill="none"/>
+  
+  <!-- Text -->
+  <text x="256" y="440" font-family="Arial, sans-serif" font-size="48" 
+        font-weight="bold" fill="#ffffff" text-anchor="middle">
+    VolleyCoach
+  </text>
+</svg>
