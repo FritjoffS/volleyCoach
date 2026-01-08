@@ -685,6 +685,10 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
       <div class="lineup-content">
         <div class="current-set-info">
           <h4>Set <span id="currentSetNumber">1</span></h4>
+          <p class="lineup-hint">
+            <span class="lineup-hint-icon">👆</span>
+            Tryck på cirklarna för att välja spelare
+          </p>
           <div class="lineup-status" id="lineupStatus">
             <span class="status-indicator incomplete">Ofullständig uppställning</span>
           </div>
@@ -1105,9 +1109,11 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
     const circle = slot.querySelector('.player-circle');
     const rect = circle.getBoundingClientRect();
     picker.style.display = 'block';
-    // Initial preferred placement: below the circle, left aligned with circle
-    const preferTop = rect.bottom + 6 + window.scrollY;
-    const preferLeft = rect.left + window.scrollX;
+    picker.style.maxHeight = ''; // Reset max-height
+    
+    // Initial preferred placement: below the circle, centered on circle
+    const preferTop = rect.bottom + 8 + window.scrollY;
+    const preferLeft = rect.left + (rect.width / 2) + window.scrollX;
     picker.style.top = preferTop + 'px';
     picker.style.left = preferLeft + 'px';
 
@@ -1116,25 +1122,48 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
     const pickerWidth = picker.offsetWidth || 180;
     const docWidth = document.documentElement.clientWidth || window.innerWidth;
     const docHeight = document.documentElement.clientHeight || window.innerHeight;
+    const viewportTop = window.scrollY;
+    const viewportBottom = viewportTop + docHeight;
 
-    // Compute adjusted left so picker stays within viewport (8px padding)
-    let adjustedLeft = preferLeft;
-    if (adjustedLeft + pickerWidth > docWidth - 8) {
-      adjustedLeft = Math.max(8 + window.scrollX, docWidth - 8 - pickerWidth + window.scrollX);
+    // Compute adjusted left so picker stays within viewport (16px padding on mobile)
+    const horizontalPadding = docWidth < 480 ? 16 : 8;
+    let adjustedLeft = preferLeft - (pickerWidth / 2); // Center on circle
+    
+    // Ensure picker doesn't overflow right edge
+    if (adjustedLeft + pickerWidth > docWidth - horizontalPadding + window.scrollX) {
+      adjustedLeft = docWidth - horizontalPadding - pickerWidth + window.scrollX;
     }
-    adjustedLeft = Math.max(8 + window.scrollX, adjustedLeft);
+    
+    // Ensure picker doesn't overflow left edge
+    adjustedLeft = Math.max(horizontalPadding + window.scrollX, adjustedLeft);
 
     // Compute vertical position and clamp
     const pickerHeight = picker.offsetHeight || 200;
+    const verticalPadding = 16;
     let adjustedTop = preferTop;
-    if (adjustedTop + pickerHeight > docHeight - 8 + window.scrollY) {
-      // try place above
-      const aboveTop = rect.top + window.scrollY - pickerHeight - 6;
-      if (aboveTop >= window.scrollY + 8) {
+    
+    // Check if picker would overflow bottom of viewport
+    if (adjustedTop + pickerHeight > viewportBottom - verticalPadding) {
+      // Try placing above the circle
+      const aboveTop = rect.top + window.scrollY - pickerHeight - 8;
+      
+      if (aboveTop >= viewportTop + verticalPadding) {
+        // Fits above
         adjustedTop = aboveTop;
       } else {
-        adjustedTop = window.scrollY + 8;
-        picker.style.maxHeight = (docHeight - 24) + 'px';
+        // Doesn't fit above or below - constrain height and place optimally
+        const availableBelow = viewportBottom - preferTop - verticalPadding;
+        const availableAbove = rect.top - viewportTop - verticalPadding;
+        
+        if (availableBelow >= availableAbove) {
+          // Place below with constrained height
+          adjustedTop = preferTop;
+          picker.style.maxHeight = Math.max(120, availableBelow - 8) + 'px';
+        } else {
+          // Place above with constrained height
+          adjustedTop = viewportTop + verticalPadding;
+          picker.style.maxHeight = Math.max(120, availableAbove - 8) + 'px';
+        }
       }
     }
 
@@ -1150,6 +1179,21 @@ export function renderLineupManager(appDiv, match, matchLineups, squadPlayers, o
     closePicker();
   });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePicker(); });
+  
+  // Close picker on orientation change (mobile)
+  window.addEventListener('orientationchange', () => {
+    closePicker();
+  });
+  
+  // Close picker on scroll to avoid positioning issues
+  let scrollTimeout;
+  window.addEventListener('scroll', () => {
+    if (!activePicker) return;
+    clearTimeout(scrollTimeout);
+    scrollTimeout = setTimeout(() => {
+      closePicker();
+    }, 150);
+  }, { passive: true });
 
   // Delegate click handlers to circles: open picker for that slot
   document.addEventListener('click', (e) => {
