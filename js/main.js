@@ -17,14 +17,23 @@ let deferredPrompt;
 
 window.addEventListener('beforeinstallprompt', (e) => {
   console.log('PWA install prompt available');
-  deferredPrompt = e;
+  // Förhindra Chrome 67 och tidigare från att automatiskt visa prompten
   e.preventDefault();
+  // Spara eventet så vi kan trigga det senare
+  deferredPrompt = e;
+  // Visa vår egna install-knapp
   showInstallButton();
 });
 
 window.addEventListener('appinstalled', (e) => {
   console.log('PWA was installed successfully');
-  document.getElementById('installButton')?.remove();
+  // Rensa deferredPrompt så den inte kan användas igen
+  deferredPrompt = null;
+  // Ta bort install-knappen
+  const installBtn = document.getElementById('installButton');
+  if (installBtn) {
+    installBtn.remove();
+  }
 });
 
 function showInstallButton() {
@@ -66,15 +75,31 @@ function showInstallButton() {
 }
 
 async function installApp() {
-  if (deferredPrompt) {
-    deferredPrompt.prompt();
-    const result = await deferredPrompt.userChoice;
-    console.log('Install result:', result);
-    if (result.outcome === 'accepted') {
-      document.getElementById('installButton')?.remove();
-    }
-    deferredPrompt = null;
+  if (!deferredPrompt) {
+    console.log('Install prompt not available');
+    return;
   }
+  
+  // Visa install prompten
+  deferredPrompt.prompt();
+  
+  // Vänta på användarens val
+  const result = await deferredPrompt.userChoice;
+  console.log('Install result:', result.outcome);
+  
+  if (result.outcome === 'accepted') {
+    console.log('User accepted the install prompt');
+    // Ta bort install-knappen
+    const installBtn = document.getElementById('installButton');
+    if (installBtn) {
+      installBtn.remove();
+    }
+  } else {
+    console.log('User dismissed the install prompt');
+  }
+  
+  // Rensa deferredPrompt eftersom den bara kan användas en gång
+  deferredPrompt = null;
 }
 
 // Globalt sparat state
