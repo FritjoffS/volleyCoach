@@ -1,0 +1,190 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    
+    "teams": {
+      "$teamId": {
+        ".read": true,
+        ".write": true,
+        
+        ".validate": "newData.hasChildren(['name', 'type', 'mode'])",
+        
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        
+        "type": {
+          ".validate": "newData.isString() && (newData.val() == 'Dam' || newData.val() == 'Herr' || newData.val() == 'Mix')"
+        },
+        
+        "mode": {
+          ".validate": "newData.isString() && (newData.val() == '6manna' || newData.val() == '4manna' || newData.val() == 'Beach')"
+        },
+        
+        "players": {    
+          "$playerId": {
+            ".validate": "newData.hasChildren(['name'])",
+            
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+            },
+            
+            "position": {
+              ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 50)"
+            },
+            
+            "number": {
+              ".validate": "!newData.exists() || (newData.isNumber() && newData.val() >= 0 && newData.val() <= 99)"
+            },
+            
+            "contactInfo": {
+              ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 200)"
+            },
+            
+            "stats": {
+              ".validate": "!newData.exists() || newData.hasChildren()",
+              
+              "trainingsAttended": {
+                ".validate": "newData.isNumber() && newData.val() >= 0"
+              },
+              
+              "totalTrainings": {
+                ".validate": "newData.isNumber() && newData.val() >= 0"
+              },
+              
+              "matchesPlayed": {
+                ".validate": "newData.isNumber() && newData.val() >= 0"
+              },
+              
+              "totalPoints": {
+                ".validate": "newData.isNumber() && newData.val() >= 0"
+              }
+            },
+            
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        
+        "activities": {
+          "trainings": {
+            "$trainingId": {
+              ".validate": "newData.hasChildren(['date'])",
+              
+              "date": {
+                ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+              },
+              
+              "time": {
+                ".validate": "!newData.exists() || newData.isString()"
+              },
+              
+              "location": {
+                ".validate": "!newData.exists() || newData.isString()"
+              },
+              
+              "focus": {
+                ".validate": "!newData.exists() || newData.isString()"
+              },
+              
+              "notes": {
+                ".validate": "!newData.exists() || newData.isString()"
+              },
+              
+              "attendance": {
+                "$playerId": {
+                  ".validate": "newData.isString()"
+                }
+              },
+              
+              "$other": {
+                ".validate": false
+              }
+            }
+          },
+          
+          "matches": {
+            "$matchId": {
+              ".validate": "newData.hasChildren(['date', 'opponent'])",
+              
+              "date": {
+                ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+              },
+              
+              "time": {
+                ".validate": "!newData.exists() || newData.isString()"
+              },
+              
+              "opponent": {
+                ".validate": "newData.isString() && newData.val().length > 0"
+              },
+              
+              "location": {
+                ".validate": "!newData.exists() || newData.isString()"
+              },
+              
+              "type": {
+                ".validate": "!newData.exists() || newData.isString()"
+              },
+              
+              "result": {
+                ".validate": "!newData.exists() || newData.isString()"
+              },
+              
+              "notes": {
+                ".validate": "!newData.exists() || newData.isString()"
+              },
+              
+              "squad": {
+                "$playerId": {
+                  ".validate": "newData.hasChildren(['name'])",
+                  "name": { ".validate": "newData.isString()" },
+                  "number": { ".validate": "!newData.exists() || newData.isNumber()" },
+                  "position": { ".validate": "!newData.exists() || newData.isString()" }
+                }
+              },
+              
+              "lineups": {
+                "$setId": {
+                  ".validate": "newData.hasChildren(['positions', 'timestamp'])",
+                  
+                  "positions": {
+                    "$positionNumber": {
+                      ".validate": "newData.isString() && $positionNumber.matches(/^[1-6]$/)"
+                    }
+                  },
+                  
+                  "libero1": {
+                    ".validate": "!newData.exists() || newData.isString()"
+                  },
+                  
+                  "libero2": {
+                    ".validate": "!newData.exists() || newData.isString()"
+                  },
+                  
+                  "timestamp": {
+                    ".validate": "newData.isNumber()"
+                  },
+                  
+                  "$other": {
+                    ".validate": false
+                  }
+                }
+              },
+              
+              "$other": {
+                ".validate": false
+              }
+            }
+          }
+        },
+        
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}
