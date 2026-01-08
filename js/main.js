@@ -16,12 +16,46 @@ import {
   validateDate, validateTime, validateOpponent, confirmDelete, showSuccess,
   showErrorToast, handleError
 } from './utils.js?v=1.2.0';
+import { trackEvent, setUserProperty } from './firebase-config.js?v=1.2.0';
+
+// Spåra sidvisning vid start
+trackEvent('page_view', { page_title: 'Start' });
 
 // PWA Installation
 let deferredPrompt;
 
+// Debug: Kontrollera om appen redan är installerad
+if (window.matchMedia('(display-mode: standalone)').matches) {
+  console.log('✅ Appen körs redan som installerad PWA');
+} else {
+  console.log('ℹ️ Appen körs i webbläsaren (inte installerad ännu)');
+}
+
+// Debug: Kontrollera manifest
+fetch('/manifest.json')
+  .then(response => response.json())
+  .then(manifest => {
+    console.log('✅ Manifest.json laddad:', manifest);
+  })
+  .catch(error => {
+    console.error('❌ Kunde inte ladda manifest.json:', error);
+  });
+
+// Debug: Kontrollera Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistration().then(registration => {
+    if (registration) {
+      console.log('✅ Service Worker redan registrerad:', registration.scope);
+    } else {
+      console.log('ℹ️ Service Worker inte registrerad ännu');
+    }
+  });
+} else {
+  console.error('❌ Service Worker stöds inte i denna webbläsare');
+}
+
 window.addEventListener('beforeinstallprompt', (e) => {
-  console.log('PWA install prompt available');
+  console.log('🎉 PWA install prompt available - appen kan installeras!');
   // Förhindra Chrome 67 och tidigare från att automatiskt visa prompten
   e.preventDefault();
   // Spara eventet så vi kan trigga det senare
@@ -67,6 +101,7 @@ function showInstallButton() {
     
     document.getElementById('installButton').onclick = installApp;
     document.getElementById('dismissInstallBanner').onclick = () => {
+      trackEvent('install_banner_dismissed');
       banner.style.animation = 'slideOut 0.3s ease-out';
       setTimeout(() => banner.remove(), 300);
     };
@@ -88,8 +123,10 @@ async function installApp() {
   
   if (result.outcome === 'accepted') {
     console.log('User accepted the install prompt');
+    trackEvent('pwa_installed');
   } else {
     console.log('User dismissed the install prompt');
+    trackEvent('pwa_install_dismissed');
   }
   
   // Ta bort install-bannern
@@ -111,10 +148,12 @@ let currentMatchId = null;
 
 // Visa startsida med alla lag
 function showStart() {
+  trackEvent('view_team_list');
   showLoading(document.getElementById('app'), "Laddar lag...");
   listTeams()
     .then(teams => {
       renderStart(document.getElementById('app'), teams, showTeam, showNewTeam);
+      trackEvent('team_list_loaded', { team_count: Object.keys(teams || {}).length });
     })
     .catch(error => {
       handleError(error, 'vid laddning av lag');
@@ -139,6 +178,7 @@ function showNewTeam() {
       showLoading(document.getElementById('app'), "Skapar lag...");
       const teamId = await createTeam(teamData.name, teamData.type, teamData.mode);
       currentTeamId = teamId;
+      trackEvent('team_created', { team_type: teamData.type, team_mode: teamData.mode });
       showSuccess('Lag skapat!');
       showTeam(teamId);
     } catch (error) {
@@ -150,6 +190,7 @@ function showNewTeam() {
 // Visa lagets sida med meny
 function showTeam(teamId) {
   currentTeamId = teamId;
+  trackEvent('view_team');
   showLoading(document.getElementById('app'), "Laddar lag...");
   getTeam(teamId)
     .then(team => {
@@ -215,6 +256,7 @@ function showEditTeam() {
 
 // Visa lista över aktiviteter (träningar och matcher)
 function showActivities() {
+  trackEvent('view_activities');
   showLoading(document.getElementById('teamContent'), "Laddar aktiviteter...");
   getActivities(currentTeamId)
     .then(activities => {
@@ -227,6 +269,7 @@ function showActivities() {
         showMatch,
         () => showTeam(currentTeamId) // Tillbaka till lag
       );
+      trackEvent('activities_loaded', { activity_count: activities.length });
     })
     .catch(error => {
       handleError(error, 'vid laddning av aktiviteter');
@@ -236,6 +279,7 @@ function showActivities() {
 
 // Visa lista med spelare
 function showPlayers() {
+  trackEvent('view_players');
   showLoading(document.getElementById('teamContent'), "Laddar spelare...");
   getTeam(currentTeamId)
     .then(team => {
@@ -247,6 +291,7 @@ function showPlayers() {
         showPlayer,
         () => showTeam(currentTeamId) // Tillbaka till lag
       );
+      trackEvent('players_loaded', { player_count: Object.keys(players).length });
     })
     .catch(error => {
       handleError(error, 'vid laddning av spelare');
@@ -303,6 +348,7 @@ function showNewPlayer() {
     try {
       showLoading(document.getElementById('teamContent'), "Lägger till spelare...");
       await addPlayer(currentTeamId, playerData);
+      trackEvent('player_created', { position: playerData.position });
       showSuccess('Spelare tillagd!');
       showPlayers();
     } catch (error) {
@@ -347,6 +393,7 @@ function showEditPlayer() {
           try {
             showLoading(document.getElementById('teamContent'), "Sparar ändringar...");
             await updatePlayer(currentTeamId, currentPlayerId, playerData);
+            trackEvent('player_updated');
             showSuccess('Spelare uppdaterad!');
             showPlayer(currentPlayerId);
           } catch (error) {
@@ -399,6 +446,7 @@ function showNewTraining() {
       try {
         showLoading(document.getElementById('teamContent'), "Skapar träning...");
         await addTraining(currentTeamId, trainingData);
+        trackEvent('training_created');
         showSuccess('Träning skapad!');
         showActivities();
       } catch (error) {
@@ -439,6 +487,7 @@ function showNewMatch() {
       try {
         showLoading(document.getElementById('teamContent'), "Skapar match...");
         await addMatch(currentTeamId, matchData);
+        trackEvent('match_created');
         showSuccess('Match skapad!');
         showActivities();
       } catch (error) {
@@ -452,6 +501,7 @@ function showNewMatch() {
 // Visa detaljer för träning
 function showTraining(trainingId) {
   currentTrainingId = trainingId;
+  trackEvent('view_training');
   showLoading(document.getElementById('teamContent'), "Laddar träning...");
   getActivities(currentTeamId)
     .then(activities => {
@@ -477,6 +527,7 @@ function showTraining(trainingId) {
 // Visa detaljer för match
 function showMatch(matchId) {
   currentMatchId = matchId;
+  trackEvent('view_match');
   showLoading(document.getElementById('teamContent'), "Laddar match...");
   getActivities(currentTeamId)
     .then(activities => {
@@ -622,6 +673,7 @@ function showEditMatch() {
 
 // Visa spelartrupp-hantering för match
 function showSquadManager(matchId) {
+  trackEvent('view_squad_manager');
   showLoading(document.getElementById('teamContent'), "Laddar spelartrupp...");
   
   Promise.all([
@@ -643,6 +695,7 @@ function showSquadManager(matchId) {
         try {
           showLoading(document.getElementById('teamContent'), "Sparar trupp...");
           await updateMatchSquad(currentTeamId, matchId, squadData);
+          trackEvent('squad_saved', { player_count: Object.keys(squadData).length });
           showSuccess('Trupp sparad!');
           showMatch(matchId); // Tillbaka till matchdetaljer
         } catch (error) {
@@ -658,6 +711,7 @@ function showSquadManager(matchId) {
 
 // Visa laguppställnings-hantering för match
 function showLineupManager(matchId) {
+  trackEvent('view_lineup_manager');
   showLoading(document.getElementById('teamContent'), "Laddar laguppställningar...");
   
   Promise.all([
@@ -699,6 +753,7 @@ function showLineupManager(matchId) {
     window.saveCurrentSetData = async (setNumber, lineupData) => {
       try {
         await saveSetLineup(currentTeamId, matchId, setNumber, lineupData);
+        trackEvent('lineup_saved', { set_number: setNumber });
         showSuccess(`Set ${setNumber} laguppställning sparad!`);
       } catch (error) {
         handleError(error, 'vid sparande av laguppställning');
