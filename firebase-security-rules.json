@@ -140,11 +140,13 @@
               },
               
               "squad": {
+                ".validate": "!newData.exists() || newData.hasChildren()",
                 "$playerId": {
                   ".validate": "newData.hasChildren(['name'])",
                   "name": { ".validate": "newData.isString()" },
-                  "number": { ".validate": "!newData.exists() || newData.isNumber()" },
-                  "position": { ".validate": "!newData.exists() || newData.isString()" }
+                  "number": { ".validate": "!newData.exists() || newData.isNumber() || newData.isString()" },
+                  "position": { ".validate": "!newData.exists() || newData.isString()" },
+                  "$other": { ".validate": false }
                 }
               },
               
